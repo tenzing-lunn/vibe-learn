@@ -1,0 +1,8 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "vibe-wise-codex",
+  "version": "0.1.0",
+  "description": "Learn the code you build with Codex through plain explanations, project maps, and local learning notes.",
+  "author": { "name": "Tenzing Lunn" },
+  "license": "MIT"
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "VibeWise for Codex"
+  short_description: "Understand the code and choices as you build"
+  default_prompt: "Use $vibe-wise-learn to explain this project's flow and help me understand the next change."
