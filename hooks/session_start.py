@@ -3,7 +3,7 @@
 Claude Code sends a JSON event on stdin. For a project with active learning notes,
 we print JSON instructions telling Claude which files to read. Otherwise we stay
 silent. This hook does not teach, write notes, or parse conversation transcripts.
-The events that trigger it (including compaction) are configured in hooks.json.
+The events that trigger it (including compaction) are configured by setup.py.
 """
 
 import json
@@ -41,13 +41,11 @@ def state_directory(cwd):
     """Find the nearest notes directory without crossing a Git project boundary."""
     # Starting in a source subdirectory should still find the project's notes.
     for directory in (cwd, *cwd.parents):
-        # Prefer the new name at the nearest location; keep legacy notes in place.
-        for name in (".vibe-wise", ".sensible-vibes"):
-            state = directory / name
-            if state.exists() or state.is_symlink():
-                # Stop even if this candidate is invalid. Falling back to a parent
-                # could silently load a different project's learner profile.
-                return state if state.is_dir() and not state.is_symlink() else None
+        state = directory / ".vibe-notes"
+        if state.exists() or state.is_symlink():
+            # Stop even if this candidate is invalid. Falling back to a parent
+            # could silently load a different project's learner profile.
+            return state if state.is_dir() and not state.is_symlink() else None
         # A .git file is a worktree boundary too. Never borrow another repo's state.
         if (directory / ".git").exists():
             break
@@ -77,7 +75,7 @@ def restore(payload):
     # Bootstrap from source files instead of emitting partial notes or an incomplete
     # topic index. Output size is independent of the amount of learning history.
     context = (
-        "VibeWise is active for this project. Before responding or coding, use Read "
+        "vibe-learn is active for this project. Before responding or coding, use Read "
         "to load the Learn guide and its referenced behavior instructions:\n"
         f"{PLUGIN_ROOT / 'skills/vibe-learn/SKILL.md'}\n\n"
         f"State directory: {state}\n"

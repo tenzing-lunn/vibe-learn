@@ -1,9 +1,11 @@
 """Exercise the actual hook command in isolated new and existing projects."""
 
+import importlib.util
 import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -11,13 +13,17 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = json.loads((ROOT / "hooks/hooks.json").read_text())
-REGISTRATION = CONFIG["hooks"]["SessionStart"][0]
+COMMAND = "python3 " + shlex.quote(str(ROOT / "hooks/session_start.py"))
+# The session sources setup.py registers for any agent with a startup hook.
+spec = importlib.util.spec_from_file_location("vibe_learn_setup", ROOT / "setup.py")
+setup_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(setup_module)
+MATCHER = "|".join(sorted({s for m in setup_module.MATCHERS.values() for s in m.split("|")}))
 
 
 class SessionStartTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="vibe-wise-test-")
+        self.temp = tempfile.TemporaryDirectory(prefix="vibe-learn-test-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         self.project = self.root / "project with spaces"
@@ -25,7 +31,7 @@ class SessionStartTests(unittest.TestCase):
         (self.project / ".git").mkdir()
 
     def state(self, project=None, mode="active"):
-        directory = (project or self.project) / ".vibe-wise"
+        directory = (project or self.project) / ".vibe-notes"
         directory.mkdir()
         (directory / "profile.md").write_text(
             f"# Learner Profile\nLearning mode: {mode}\nOnboarding: complete\n"
@@ -49,13 +55,12 @@ class SessionStartTests(unittest.TestCase):
             "cwd": str(cwd or self.project),
         })
         result = subprocess.run(
-            REGISTRATION["hooks"][0]["command"], shell=True,
+            COMMAND, shell=True,
             input=payload, text=True, capture_output=True, timeout=5,
-            # The hook needs a Python executable and its plugin location, not the
-            # developer's credentials or unrelated environment configuration.
+            # The hook needs only a Python executable, not the developer's
+            # credentials or unrelated environment configuration.
             env={
                 "PATH": os.pathsep.join((str(Path(sys.executable).parent), os.defpath)),
-                "CLAUDE_PLUGIN_ROOT": str(ROOT),
             }, cwd=self.root,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -75,10 +80,10 @@ class SessionStartTests(unittest.TestCase):
         self.state()
         for source in ("startup", "resume", "clear", "compact", "fork"):
             with self.subTest(source=source):
-                self.assertTrue(re.fullmatch(REGISTRATION["matcher"], source))
+                self.assertTrue(re.fullmatch(MATCHER, source))
                 context = self.context(source=source)
                 self.assertIn(str(ROOT / "skills/vibe-learn/SKILL.md"), context)
-                self.assertIn(str(self.project / ".vibe-wise"), context)
+                self.assertIn(str(self.project / ".vibe-notes"), context)
                 self.assertIn("Read profile.md and project-map.md", context)
                 self.assertIn("Search the entire progress.md", context)
                 self.assertNotIn("Checkpoint frequency: Light", context)
@@ -89,48 +94,16 @@ class SessionStartTests(unittest.TestCase):
         nested = self.project / "src" / "services"
         nested.mkdir(parents=True)
         (nested / "service.py").write_text("def run():\n    return 'ok'\n")
-        self.assertIn(str(self.project / ".vibe-wise"), self.context(cwd=nested))
+        self.assertIn(str(self.project / ".vibe-notes"), self.context(cwd=nested))
 
     def test_no_git_project_restores(self):
         project = self.root / "fresh-no-git"
         project.mkdir()
         self.state(project)
-        self.assertIn(str(project / ".vibe-wise"), self.context(cwd=project))
+        self.assertIn(str(project / ".vibe-notes"), self.context(cwd=project))
 
-    def test_legacy_notes_restore_without_migration(self):
-        state = self.state()
-        legacy = state.with_name(".sensible-vibes")
-        state.rename(legacy)
-        before = {p.name: p.read_bytes() for p in legacy.iterdir()}
-        context = self.context(source="compact")
-        self.assertIn("VibeWise is active", context)
-        self.assertIn(str(legacy), context)
-        self.assertIn("Read profile.md and project-map.md", context)
-        self.assertFalse(state.exists())
-        self.assertEqual(before, {p.name: p.read_bytes() for p in legacy.iterdir()})
-
-    def test_new_notes_take_precedence_over_legacy_at_same_location(self):
-        self.state().rename(self.project / ".sensible-vibes")
-        self.state(mode="paused")
-        self.assertIsNone(self.run_hook())
-
-    def test_nearest_legacy_notes_take_precedence_over_parent_notes(self):
-        self.state()
-        child = self.project / "package"
-        child.mkdir()
-        self.state(child, mode="paused").rename(child / ".sensible-vibes")
-        self.assertIsNone(self.run_hook(cwd=child))
-
-    def test_legacy_notes_respect_worktree_boundary(self):
-        self.state().rename(self.project / ".sensible-vibes")
-        child = self.project / "worktree"
-        child.mkdir()
-        (child / ".git").write_text("gitdir: /another/repo/.git/worktrees/test")
-        self.assertIsNone(self.run_hook(cwd=child))
-
-    def test_symlinked_new_state_does_not_fall_back_to_legacy(self):
-        self.state().rename(self.project / ".sensible-vibes")
-        (self.project / ".vibe-wise").symlink_to(self.root / "missing", target_is_directory=True)
+    def test_old_vibe_wise_notes_are_not_read(self):
+        self.state().rename(self.project / ".vibe-wise")
         self.assertIsNone(self.run_hook())
 
     def test_nested_repository_and_worktree_do_not_borrow_parent_profile(self):
@@ -229,7 +202,7 @@ class SessionStartTests(unittest.TestCase):
         state = self.state()
         alternate = self.root / "alternate"
         alternate.mkdir()
-        (alternate / ".vibe-wise").symlink_to(state, target_is_directory=True)
+        (alternate / ".vibe-notes").symlink_to(state, target_is_directory=True)
         self.assertIsNone(self.run_hook(cwd=alternate))
 
     def test_hook_never_changes_state(self):

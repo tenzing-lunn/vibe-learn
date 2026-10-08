@@ -34,9 +34,9 @@ MATCHERS = {
 
 START, END = "<!-- vibe-learn:start -->", "<!-- vibe-learn:end -->"
 RESUME_LINE = (
-    "If `.vibe-wise/profile.md` exists in this project and does not say "
+    "If `.vibe-notes/profile.md` exists in this project and does not say "
     "`Learning mode: paused`, read `.agents/skills/vibe-learn/SKILL.md` before "
-    "responding and follow it to resume learning from the notes in `.vibe-wise/`."
+    "responding and follow it to resume learning from the notes in `.vibe-notes/`."
 )
 
 
@@ -216,7 +216,7 @@ def main(argv=None):
         print("Codex will ask you to review and trust the new hook the first time it runs.")
     print("Suggested .gitignore lines (not added automatically):")
     print("  {}/".format(CLONE.relative_to(project)) if CLONE.parent == project else "  (your vibe-learn clone)")
-    print("  .vibe-wise/")
+    print("  .vibe-notes/")
     print("Agents set up: {}".format(", ".join(names)))
     return 0
 

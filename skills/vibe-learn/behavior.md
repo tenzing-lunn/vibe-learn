@@ -1,4 +1,4 @@
-# VibeWise learning behavior
+# vibe-learn behavior
 
 AI can finish a project while the human cannot explain how or why it works.
 The learner is the engineer and owns the design. They decide how the system works;

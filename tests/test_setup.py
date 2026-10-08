@@ -144,7 +144,7 @@ class SetupTests(unittest.TestCase):
 
     def test_installed_hook_restores_an_active_project(self):
         self.ok("--agents", "codex")
-        state = self.project / ".vibe-wise"
+        state = self.project / ".vibe-notes"
         state.mkdir()
         (state / "profile.md").write_text("# Learner Profile\nLearning mode: active\n")
         command = self.commands(".codex/hooks.json")[0]

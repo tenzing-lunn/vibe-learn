@@ -4,7 +4,7 @@ description: Back up this project's learning notes and restart onboarding after 
 disable-model-invocation: true
 ---
 
-# Reset VibeWise learning
+# Reset vibe-learn learning
 
 Run this in the main conversation, only when explicitly invoked. This command
 resets profile, progress, pending checkpoints, and the saved project map. Source
@@ -18,8 +18,8 @@ code, dependencies, Git history, other projects, and plugin installation stay in
    python3 "${CLAUDE_PLUGIN_ROOT}/skills/vibe-learn-reset/reset.py" --cwd "<absolute project directory>"
    ```
 
-   The helper uses Learn's project-boundary and legacy-state lookup. If it reports
-   no notes, explain there's nothing to reset and suggest `/vibe-wise:learn`.
+   The helper uses Learn's project-boundary lookup. If it reports
+   no notes, explain there's nothing to reset and suggest the vibe-learn skill.
    On any error, stop and explain; don't improvise deletion commands.
 
 2. Show the returned absolute project and state paths, which notes will reset,

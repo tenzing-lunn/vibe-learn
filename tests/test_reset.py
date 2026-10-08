@@ -19,15 +19,15 @@ spec.loader.exec_module(reset_module)
 
 class ResetTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="vibe-wise-reset-")
+        self.temp = tempfile.TemporaryDirectory(prefix="vibe-learn-reset-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         self.project = self.root / "project with spaces"
         self.project.mkdir()
         (self.project / ".git").mkdir()
 
-    def notes(self, project=None, legacy=False):
-        state = (project or self.project) / (".sensible-vibes" if legacy else ".vibe-wise")
+    def notes(self, project=None):
+        state = (project or self.project) / ".vibe-notes"
         state.mkdir()
         originals = {
             "profile.md": b"Learning mode: paused\nOnboarding: complete\nAdvanced\n",
@@ -98,26 +98,26 @@ class ResetTests(unittest.TestCase):
         self.assertIn("If onboarding is incomplete", context)
         self.assertNotIn("Awaiting implementation approval", context)
 
-    def test_nested_directory_and_legacy_notes(self):
-        state, originals = self.notes(legacy=True)
+    def test_nested_directory_finds_project_notes(self):
+        state, originals = self.notes()
         nested = self.project / "src"
         nested.mkdir()
         result = self.confirm(nested)
         self.assertEqual(result["state"], str(state))
         self.assert_originals(Path(result["backup"]), originals)
-        self.assertFalse((self.project / ".vibe-wise").exists())
 
-    def test_preferred_state_resets_without_touching_legacy(self):
-        state, _ = self.notes()
-        legacy, originals = self.notes(legacy=True)
-        self.assertEqual(self.confirm()["state"], str(state))
-        self.assert_originals(legacy, originals)
+    def test_old_vibe_wise_notes_are_not_reset(self):
+        old = self.project / ".vibe-wise"
+        old.mkdir()
+        (old / "profile.md").write_text("# Learner Profile\nLearning mode: active\n")
+        self.assertEqual(self.preview()["status"], "no_notes")
+        self.assertTrue((old / "profile.md").exists())
 
     def test_nearest_state_and_worktree_boundaries(self):
         parent_state, originals = self.notes()
         nested = self.project / "package"
         nested.mkdir()
-        state, _ = self.notes(nested, legacy=True)
+        state, _ = self.notes(nested)
         self.assertEqual(self.confirm(nested)["state"], str(state))
         self.assert_originals(parent_state, originals)
         for name, worktree in (("nested-repo", False), ("worktree", True)):
@@ -132,7 +132,7 @@ class ResetTests(unittest.TestCase):
     def test_no_state_and_empty_state_do_not_create_files(self):
         self.assertEqual(self.preview()["status"], "no_notes")
         self.assertEqual(list(self.project.iterdir()), [self.project / ".git"])
-        state = self.project / ".vibe-wise"
+        state = self.project / ".vibe-notes"
         state.mkdir()
         self.assertEqual(self.preview()["status"], "no_notes")
         self.assertEqual(list(state.iterdir()), [])
@@ -171,7 +171,7 @@ class ResetTests(unittest.TestCase):
         outside = self.root / "outside"
         outside.mkdir()
         target, originals = self.notes(outside)
-        (self.project / ".vibe-wise").symlink_to(target, target_is_directory=True)
+        (self.project / ".vibe-notes").symlink_to(target, target_is_directory=True)
         self.assertEqual(self.preview()["status"], "no_notes")
         self.assert_originals(target, originals)
 
