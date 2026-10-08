@@ -64,11 +64,17 @@ Implemented 2026-10-07 (commit b687c0c): folders renamed; setup.py; tests/test_s
 --dangerously-bypass-hook-trust and a one-run project-trust override. Cause unknown
 (exec mode vs. persisted project trust). Next: interactive check by the learner.
 
+## Notes folder and cleanup
+- Learner decided (2026-10-07): notes folder `.vibe-notes/`; journal `vibe-journal.md`
+  at the project root (like a README); stop reading `.vibe-wise/` and
+  `.sensible-vibes/`; remove outdated repo files; commit these learning notes.
+- Implemented: notes committed (92602be); rename + removals (90ef4e0): hook, reset,
+  setup, guides, tests use `.vibe-notes/`; deleted docs/development.md and
+  hooks/hooks.json. 44 tests pass.
+- This project's own notes stay in `.vibe-wise/` while Noah's plugin runs learning here.
+
 ## Pending decision
-Decision: Adapt the skill content (next build step; not yet asked)
-Codex interactive check passed 2026-10-07: after the learner trusted the folder and
-the hook via Codex's own prompts, the SessionStart hook ran on the first message
-(marker at 22:12) and Codex read the guide and notes. Not run on open; not run in
-`codex exec` with one-run overrides. Codex used its own commands where Noah's guide
-says "Read tool" (wording to make agent-neutral). Throwaway folder remains trusted
-in ~/.codex/config.toml; offered to remove.
+Decision: Adapt the skill content to be agent-neutral (next build step; not yet asked)
+Known items: Claude-only wording ("Read tool", AskUserQuestion picker, Glob,
+${CLAUDE_PLUGIN_ROOT} in reset); reset skill not installed by setup.py; README outdated.
+Codex check (2026-10-07) passed: hook runs on first message after persisted trust.

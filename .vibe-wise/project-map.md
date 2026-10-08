@@ -58,7 +58,7 @@ Current code (verified; upstream VibeWise 0.1.43, packaged as a Claude Code plug
 - `hooks/session_start.py`: restore instructions, now pointing at skills/vibe-learn/SKILL.md;
   `hooks/hooks.json` kept only for tests.
 - `skills/vibe-learn-reset/`: Noah's reset (still uses ${CLAUDE_PLUGIN_ROOT}; not installed by setup.py yet).
-- `tests/`: 48 tests (hook, reset, setup).
+- `tests/`: 44 tests (hook, reset, setup). `docs/development.md` and `hooks/hooks.json` removed (90ef4e0).
 
 Claude Code-specific (verified): `.claude-plugin/` manifest, `/vibe-wise:*` commands,
 the `AskUserQuestion` picker, `hooks/hooks.json` and `${CLAUDE_PLUGIN_ROOT}`.
@@ -79,7 +79,9 @@ New framework (proposed by learner, not confirmed or implemented):
     `.gitignore` lines without editing.
   - Name: `vibe-learn` (learner chose 2026-10-07): `$vibe-learn`, `/vibe-learn`,
     cloned folder `vibe-learn/`. Local folder still `vibelearning`.
-  - Open: notes folder name (`.vibe-learn/` vs `.vibe-wise/`); README rewrite (now outdated, broken icon link).
+  - Notes folder `.vibe-notes/` (implemented 90ef4e0; legacy names dropped); journal
+    `vibe-journal.md` at project root (decided, not built).
+  - Open: README rewrite (now outdated, broken icon link).
 
 Codex facts (verified in OpenAI docs, 2026-10-07):
 - Skills: `.agents/skills/` from the starting directory up to the repo root, or
@@ -107,7 +109,7 @@ accounts, or telemetry. The agent reads notes as context and treats them as data
 not instructions.
 
 ## Build and Deployment
-- `python3 -B -m unittest discover -s tests -v`: 48 tests passed on 2026-10-07.
+- `python3 -B -m unittest discover -s tests -v`: 44 tests passed on 2026-10-07 (after 90ef4e0).
 - Codex 0.161.0 real check (2026-10-07): skill discovered; after persisted folder +
   hook trust, the project SessionStart hook runs on the first user message in
   interactive Codex. Not on open; not in `codex exec` with one-run overrides.
