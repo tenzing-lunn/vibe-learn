@@ -1,5 +1,5 @@
 ---
-name: reset
+name: vibe-learn-reset
 description: Back up this project's learning notes and restart onboarding after confirmation. Does not reset application code.
 disable-model-invocation: true
 ---
@@ -15,7 +15,7 @@ code, dependencies, Git history, other projects, and plugin installation stay in
    do not pass the placeholder literally.
 
    ```sh
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/reset/reset.py" --cwd "<absolute project directory>"
+   python3 "${CLAUDE_PLUGIN_ROOT}/skills/vibe-learn-reset/reset.py" --cwd "<absolute project directory>"
    ```
 
    The helper uses Learn's project-boundary and legacy-state lookup. If it reports
@@ -35,14 +35,14 @@ code, dependencies, Git history, other projects, and plugin installation stay in
    and the preview's exact `confirmation` value, safely quoted:
 
    ```sh
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/reset/reset.py" --cwd "<original cwd>" --confirm "<confirmation>"
+   python3 "${CLAUDE_PLUGIN_ROOT}/skills/vibe-learn-reset/reset.py" --cwd "<original cwd>" --confirm "<confirmation>"
    ```
 
    If the target or notes changed, preview again and get new confirmation. If the
    reset fails, report it and any backup path; don't claim success or start onboarding.
    Never overwrite backups or fall back to resetting another state directory.
 
-4. On success, show the backup path. Read `${CLAUDE_PLUGIN_ROOT}/skills/learn/SKILL.md` and resume Learn with
+4. On success, show the backup path. Read `${CLAUDE_PLUGIN_ROOT}/skills/vibe-learn/SKILL.md` and resume Learn with
    the new incomplete profile. Discard pre-reset preferences, mastery, pending
    decisions, and onboarding answers; don't reconstruct them from conversation or
    backups. Inspect actual code to rebuild the map. Begin fresh onboarding with

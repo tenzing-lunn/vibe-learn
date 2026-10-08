@@ -77,7 +77,7 @@ class SessionStartTests(unittest.TestCase):
             with self.subTest(source=source):
                 self.assertTrue(re.fullmatch(REGISTRATION["matcher"], source))
                 context = self.context(source=source)
-                self.assertIn(str(ROOT / "skills/learn/SKILL.md"), context)
+                self.assertIn(str(ROOT / "skills/vibe-learn/SKILL.md"), context)
                 self.assertIn(str(self.project / ".vibe-wise"), context)
                 self.assertIn("Read profile.md and project-map.md", context)
                 self.assertIn("Search the entire progress.md", context)

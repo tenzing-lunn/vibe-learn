@@ -1,5 +1,5 @@
 ---
-name: learn
+name: vibe-learn
 description: Activate or resume learning-first development. You lead the design; Claude gives feedback, explains concepts, asks follow-ups, and writes the agreed code.
 disable-model-invocation: true
 ---

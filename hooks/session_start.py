@@ -79,7 +79,7 @@ def restore(payload):
     context = (
         "VibeWise is active for this project. Before responding or coding, use Read "
         "to load the Learn guide and its referenced behavior instructions:\n"
-        f"{PLUGIN_ROOT / 'skills/learn/SKILL.md'}\n\n"
+        f"{PLUGIN_ROOT / 'skills/vibe-learn/SKILL.md'}\n\n"
         f"State directory: {state}\n"
         "Read profile.md and project-map.md there. Search the entire progress.md "
         "for pending decisions, then read their complete sections and other topics "
