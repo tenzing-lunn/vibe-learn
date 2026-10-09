@@ -128,6 +128,19 @@ class SetupTests(unittest.TestCase):
         result = self.ok("--agents", "claude")
         self.assertNotIn("settings.json", result.stdout.replace("settings.local.json", ""))
 
+    def test_cleanup_keeps_users_empty_groups_and_skips_broken_shared_settings(self):
+        (self.project / ".claude").mkdir()
+        shared = self.project / ".claude/settings.json"
+        ours = "python3 " + shlex.quote(str(self.clone / "hooks/session_start.py"))
+        shared.write_text(json.dumps({"hooks": {"SessionStart": [
+            {"matcher": "user", "hooks": []}, {"hooks": [{"type": "command", "command": ours}]}]}}))
+        self.ok("--agents", "claude")
+        self.assertEqual(self.json(".claude/settings.json")["hooks"]["SessionStart"],
+                         [{"matcher": "user", "hooks": []}])
+        shared.write_text("{broken")
+        self.ok("--agents", "claude")
+        self.assertEqual(shared.read_text(), "{broken")
+
     def test_unmatched_markers_stop_without_touching_user_text(self):
         for text in ("# Rules\n<!-- vibe-learn:start -->\nMY RULE\n",
                      "x\n<!-- vibe-learn:end -->\ny\n<!-- vibe-learn:start -->\n",
@@ -150,9 +163,14 @@ class SetupTests(unittest.TestCase):
     def test_unusual_hook_groups_and_bom_are_tolerated(self):
         (self.project / ".codex").mkdir()
         (self.project / ".codex/hooks.json").write_bytes(b"\xef\xbb\xbf" + json.dumps(
-            {"hooks": {"SessionStart": [{"matcher": "x", "hooks": None}, "odd"]}}).encode())
+            {"hooks": {"SessionStart": [{"matcher": "x", "hooks": None}, "odd",
+                                       {"hooks": [{"type": "command", "command": None}]}]}}).encode())
         self.ok("--agents", "codex")
-        self.assertEqual(len(self.commands_tolerant(".codex/hooks.json")), 1)
+        commands = self.commands_tolerant(".codex/hooks.json")
+        # The user's odd entries stay; ours is added once.
+        self.assertEqual(len(commands), 2)
+        self.assertIn(None, commands)
+        self.assertEqual(sum(1 for c in commands if c and "session_start.py" in c), 1)
 
     def commands_tolerant(self, relative):
         return [hook["command"] for group in self.json(relative)["hooks"]["SessionStart"]

@@ -100,14 +100,28 @@ def plan_hook(path, agent):
             if isinstance(hook, dict) and hook.get("command") == command:
                 return None
     # Drop only our own entries that point at a clone path that no longer exists.
-    for group in groups:
-        if isinstance(group, dict) and isinstance(group.get("hooks"), list):
-            group["hooks"] = [h for h in group["hooks"] if not (
-                isinstance(h, dict) and is_stale_copy(h.get("command", "")))]
-    groups[:] = [g for g in groups if not (isinstance(g, dict) and g.get("hooks") == [])]
+    drop_ours(groups, is_stale_copy)
     groups.append({"matcher": MATCHERS[agent], "hooks": [
         {"type": "command", "command": command, "timeout": 5}]})
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+
+def drop_ours(groups, is_ours):
+    """Remove our hook entries; drop only the groups that removal left empty."""
+    removed = False
+    for group in list(groups):
+        hooks = group.get("hooks") if isinstance(group, dict) else None
+        if not isinstance(hooks, list):
+            continue
+        kept = [h for h in hooks if not (isinstance(h, dict)
+                and isinstance(h.get("command"), str) and is_ours(h["command"]))]
+        if len(kept) != len(hooks):
+            removed = True
+            if kept:
+                group["hooks"] = kept
+            else:
+                groups.remove(group)
+    return removed
 
 
 def plan_unhook(path):
@@ -115,24 +129,16 @@ def plan_unhook(path):
 
     Earlier versions put Claude Code's hook in the shared .claude/settings.json.
     """
-    if not path.exists():
-        return None
-    data = read_json(path)
+    try:
+        data = read_json(path)
+    except SetupError:
+        return None  # Only cleanup; a file we can't parse is left exactly as it is.
     hooks = data.get("hooks")
     groups = hooks.get("SessionStart") if isinstance(hooks, dict) else None
     if not isinstance(groups, list):
         return None
-    ours = (hook_command(),)
-    changed = False
-    for group in groups:
-        if isinstance(group, dict) and isinstance(group.get("hooks"), list):
-            kept = [h for h in group["hooks"] if not (isinstance(h, dict) and (
-                h.get("command") in ours or is_stale_copy(h.get("command", ""))))]
-            changed = changed or len(kept) != len(group["hooks"])
-            group["hooks"] = kept
-    if not changed:
+    if not drop_ours(groups, lambda c: c == hook_command() or is_stale_copy(c)):
         return None
-    groups[:] = [g for g in groups if not (isinstance(g, dict) and g.get("hooks") == [])]
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 

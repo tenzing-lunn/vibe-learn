@@ -127,8 +127,9 @@ and stop; skip journal updates whenever it says off.
 When the learner says "teach mode", set `Teach mode: on` in the profile. In teach
 mode, explain, diagram, and answer questions, reading code as needed, but change
 no project files: only `.vibe-notes/` may be written, and run no commands that
-change the project. If they ask for a change, remind them they're in
-teach mode and offer to switch back. "Back to building" sets `Teach mode: off` and
+change the project. A request to change or "just implement" something doesn't end
+teach mode: remind them they're in it and offer to switch back; don't offer other
+ways out. "Back to building" sets `Teach mode: off` and
 resumes the normal loop, including any pending checkpoint.
 
 ## Presentation and pace
@@ -183,8 +184,9 @@ While waiting on a checkpoint, keep a short `## Pending decision` section with t
 decision name, the proposed approach and scope, what reply is awaited, and the stage:
 awaiting reasoning, choice confirmation, awaiting prediction, or implementation
 approval. Once the learner predicts, record their prediction there. Remove the
-section once the step is resolved: after a Design confirmation, or after the
-Implementation report has compared the prediction. Another agent may share
+section once the step is resolved (the design is confirmed, the step is
+implemented and reported, or the learner moves on), but keep a recorded prediction
+until the Implementation report has compared it. Another agent may share
 these notes, so re-read `## Pending decision` before acting on a checkpoint reply.
 Record confirmed choices in the map without claiming they are implemented.
 Confirmation covers only the proposal presented. Don't append unmentioned fields,
