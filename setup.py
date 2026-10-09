@@ -22,7 +22,8 @@ HOOK = CLONE / "hooks" / "session_start.py"
 
 # key: (display name, skill folder, [(how learning resumes, file that does it)])
 AGENTS = {
-    "claude": ("Claude Code", ".claude/skills", [("hook", ".claude/settings.json")]),
+    # settings.local.json is per machine, since the hook holds this clone's absolute path.
+    "claude": ("Claude Code", ".claude/skills", [("hook", ".claude/settings.local.json")]),
     # Codex skips project hooks until the user trusts them, and in `codex exec`.
     # It always reads AGENTS.md, so the line there is the fallback.
     "codex": ("Codex", ".agents/skills", [("hook", ".codex/hooks.json"), ("line", "AGENTS.md")]),
@@ -63,17 +64,20 @@ def is_stale_copy(command):
             and not Path(parts[1]).exists())
 
 
-def check_target(path):
-    # Writing through a link could change files outside this project.
-    if path.is_symlink():
-        raise SetupError("Refusing to write through a symlink: {}".format(path))
+def check_target(path, project):
+    # Writing through a link (the file or any folder above it) could change files
+    # outside this project, e.g. a .claude folder linked to ~/.claude.
+    while path != project:
+        if path.is_symlink():
+            raise SetupError("Refusing to write through a symlink: {}".format(path))
+        path = path.parent
 
 
 def read_json(path):
     if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (ValueError, UnicodeError):
         raise SetupError("{} is not valid JSON. Fix it first; nothing was changed.".format(path))
     if not isinstance(data, dict):
@@ -90,7 +94,8 @@ def plan_hook(path, agent):
         raise SetupError("Unexpected hooks layout in {}; nothing was changed.".format(path))
     command = hook_command()
     for group in groups:
-        for hook in group.get("hooks", []) if isinstance(group, dict) else []:
+        hooks_list = group.get("hooks") if isinstance(group, dict) else None
+        for hook in hooks_list if isinstance(hooks_list, list) else []:
             if isinstance(hook, dict) and hook.get("command") == command:
                 return None
     # Drop only our own entries that point at a clone path that no longer exists.
@@ -101,31 +106,44 @@ def plan_hook(path, agent):
     groups[:] = [g for g in groups if not (isinstance(g, dict) and g.get("hooks") == [])]
     groups.append({"matcher": MATCHERS[agent], "hooks": [
         {"type": "command", "command": command, "timeout": 5}]})
-    return json.dumps(data, indent=2) + "\n"
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
 def plan_line(path):
     """Return instruction-file text containing our marked block, or None if current."""
-    text = path.read_text(encoding="utf-8") if path.exists() else ""
-    block = "{}\n{}\n{}".format(START, RESUME_LINE, END)
-    if START in text and END in text:
+    text = read_text(path)
+    nl = "\r\n" if "\r\n" in text else "\n"  # keep the file's own line endings
+    block = nl.join((START, RESUME_LINE, END))
+    starts, ends = text.count(START), text.count(END)
+    if starts == ends == 1 and text.index(START) < text.index(END):
         before, rest = text.split(START, 1)
-        after = rest.split(END, 1)[1]
-        new = before + block + after
+        new = before + block + rest.split(END, 1)[1]
+    elif starts == ends == 0:
+        new = text + (nl if text and not text.endswith("\n") else "") + \
+            (nl if text else "") + block + nl
     else:
-        new = text + ("\n" if text and not text.endswith("\n") else "") + \
-            ("\n" if text else "") + block + "\n"
+        # Guessing which markers are ours could delete the user's own text.
+        raise SetupError("Unmatched vibe-learn markers in {}. Keep one start and one "
+                         "end line (or remove both), then rerun; nothing was changed.".format(path))
     return None if new == text else new
 
 
+def read_text(path):
+    if not path.exists():
+        return ""
+    with path.open(encoding="utf-8", newline="") as stream:
+        return stream.read()
+
+
 def skill_differs(source, dest):
-    """True if any file in source is missing or different in dest, at any depth."""
+    """True if dest's files don't exactly match source's, at any depth."""
     if not dest.exists():
         return True
     pending = [filecmp.dircmp(str(source), str(dest))]
     while pending:
         comparison = pending.pop()
-        if comparison.left_only or comparison.diff_files or comparison.funny_files:
+        if (comparison.left_only or comparison.right_only
+                or comparison.diff_files or comparison.funny_files):
             return True
         pending.extend(comparison.subdirs.values())
     return False
@@ -138,12 +156,12 @@ def plan(project, agents):
         _, skill_dir, resumes = AGENTS[agent]
         for source in SKILLS:
             dest = project / skill_dir / source.name
-            check_target(dest)
+            check_target(dest, project)
             if (source, dest) not in skills:
                 skills.append((source, dest))
         for mode, target in resumes:
             path = project / target
-            check_target(path)
+            check_target(path, project)
             if path not in files:
                 files[path] = plan_hook(path, agent) if mode == "hook" else plan_line(path)
     return skills, files
@@ -155,7 +173,11 @@ def apply(skills, files):
         status = "unchanged"
         if skill_differs(source, dest):
             status = "updated" if dest.exists() else "created"
-            shutil.copytree(str(source), str(dest), dirs_exist_ok=True,
+            # Replace the whole folder so files removed upstream don't linger.
+            # rmtree removes links inside dest without following them.
+            if dest.exists():
+                shutil.rmtree(str(dest))
+            shutil.copytree(str(source), str(dest),
                             ignore=shutil.ignore_patterns("__pycache__"))
         changes.append((status, dest))
     for path, text in files.items():
@@ -164,7 +186,8 @@ def apply(skills, files):
             continue
         status = "updated" if path.exists() else "created"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        with path.open("w", encoding="utf-8", newline="") as stream:
+            stream.write(text)
         changes.append((status, path))
     return changes
 
@@ -223,13 +246,17 @@ def main(argv=None):
         print("  {:<9} {}".format(status, path.relative_to(project)))
     names = [AGENTS[a][0] for a in agents]
     print("\nStart learning: $vibe-learn in Codex, /vibe-learn in Claude Code;")
-    print("in other agents, ask them to use the vibe-learn skill.")
+    print("in other agents: \"Read .agents/skills/vibe-learn/SKILL.md and follow it.\"")
     print("Start over later with $vibe-learn-reset or /vibe-learn-reset.")
     if "codex" in agents:
         print("Codex will ask you to review and trust the new hook the first time it runs.")
     print("Suggested .gitignore lines (not added automatically):")
     print("  {}/".format(CLONE.relative_to(project)) if CLONE.parent == project else "  (your vibe-learn clone)")
     print("  .vibe-notes/")
+    if "claude" in agents:
+        print("  .claude/settings.local.json")
+    if "codex" in agents:
+        print("Note: .codex/hooks.json holds this clone's full path; on another computer, rerun setup.")
     print("Agents set up: {}".format(", ".join(names)))
     return 0
 

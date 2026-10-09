@@ -59,10 +59,12 @@ class SetupTests(unittest.TestCase):
         # Fallback for sessions where Codex doesn't run project hooks.
         self.assertIn(".agents/skills/vibe-learn/SKILL.md", (self.project / "AGENTS.md").read_text())
 
-    def test_claude_gets_project_skill_and_settings_hook(self):
+    def test_claude_gets_project_skill_and_machine_local_hook(self):
         self.ok("--agents", "claude")
         self.assertTrue((self.project / ".claude/skills/vibe-learn/SKILL.md").is_file())
-        group = self.json(".claude/settings.json")["hooks"]["SessionStart"][0]
+        # The hook holds this machine's clone path, so it stays out of shared settings.
+        self.assertFalse((self.project / ".claude/settings.json").exists())
+        group = self.json(".claude/settings.local.json")["hooks"]["SessionStart"][0]
         self.assertIn("fork", group["matcher"])
         self.assertFalse((self.project / ".agents").exists())
 
@@ -87,16 +89,17 @@ class SetupTests(unittest.TestCase):
 
     def test_existing_settings_hooks_and_text_are_kept(self):
         (self.project / ".claude").mkdir()
-        (self.project / ".claude/settings.json").write_text(json.dumps({
+        (self.project / ".claude/settings.local.json").write_text(json.dumps({
             "permissions": {"allow": ["Bash(ls)"]},
-            "hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo mine"}]}]},
-        }))
+            "hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo héllo"}]}]},
+        }, ensure_ascii=False), encoding="utf-8")
         (self.project / "AGENTS.md").write_text("# House rules\nUse tabs.")
         self.ok("--agents", "claude,other")
-        settings = self.json(".claude/settings.json")
+        settings = self.json(".claude/settings.local.json")
         self.assertEqual(settings["permissions"], {"allow": ["Bash(ls)"]})
-        self.assertIn("echo mine", self.commands(".claude/settings.json"))
-        self.assertEqual(len(self.commands(".claude/settings.json")), 2)
+        self.assertIn("echo héllo", self.commands(".claude/settings.local.json"))
+        self.assertIn("héllo", (self.project / ".claude/settings.local.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(self.commands(".claude/settings.local.json")), 2)
         self.assertTrue((self.project / "AGENTS.md").read_text().startswith("# House rules\nUse tabs.\n"))
 
     def test_edited_line_is_replaced_not_duplicated(self):
@@ -108,6 +111,59 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(text.count("<!-- vibe-learn:start -->"), 1)
         self.assertNotIn("RESUME", text)
         self.assertTrue(text.startswith("Intro\n") and text.endswith("Outro\n"))
+
+    def test_unmatched_markers_stop_without_touching_user_text(self):
+        for text in ("# Rules\n<!-- vibe-learn:start -->\nMY RULE\n",
+                     "x\n<!-- vibe-learn:end -->\ny\n<!-- vibe-learn:start -->\n",
+                     "<!-- vibe-learn:start -->\na\n<!-- vibe-learn:end -->\n" * 2):
+            (self.project / "AGENTS.md").write_text(text)
+            for _ in range(2):
+                result = self.setup("--agents", "other")
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("Unmatched vibe-learn markers", result.stderr)
+            self.assertEqual((self.project / "AGENTS.md").read_text(), text)
+
+    def test_crlf_instruction_file_keeps_its_line_endings(self):
+        (self.project / "AGENTS.md").write_bytes(b"line1\r\nline2\r\n")
+        self.ok("--agents", "other")
+        data = (self.project / "AGENTS.md").read_bytes()
+        self.assertTrue(data.startswith(b"line1\r\nline2\r\n\r\n<!-- vibe-learn:start -->\r\n"))
+        self.assertNotIn(b"\n", data.replace(b"\r\n", b""))
+        self.assertNotIn("created", self.ok("--agents", "other").stdout)
+
+    def test_unusual_hook_groups_and_bom_are_tolerated(self):
+        (self.project / ".codex").mkdir()
+        (self.project / ".codex/hooks.json").write_bytes(b"\xef\xbb\xbf" + json.dumps(
+            {"hooks": {"SessionStart": [{"matcher": "x", "hooks": None}, "odd"]}}).encode())
+        self.ok("--agents", "codex")
+        self.assertEqual(len(self.commands_tolerant(".codex/hooks.json")), 1)
+
+    def commands_tolerant(self, relative):
+        return [hook["command"] for group in self.json(relative)["hooks"]["SessionStart"]
+                if isinstance(group, dict) and isinstance(group.get("hooks"), list)
+                for hook in group["hooks"]]
+
+    def test_symlinked_parent_folder_is_refused(self):
+        outside = Path(self.temp.name) / "global-claude"
+        outside.mkdir()
+        (self.project / ".claude").symlink_to(outside, target_is_directory=True)
+        result = self.setup("--agents", "claude")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("symlink", result.stderr)
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_update_removes_files_dropped_upstream_and_inner_links(self):
+        self.ok("--agents", "other")
+        installed = self.project / ".agents/skills/vibe-learn"
+        victim = Path(self.temp.name) / "victim.txt"
+        victim.write_text("keep\n")
+        (installed / "SKILL.md").unlink()
+        (installed / "SKILL.md").symlink_to(victim)
+        (self.clone / "skills/vibe-learn/onboarding.md").unlink()
+        self.assertIn("updated", self.ok("--agents", "other").stdout)
+        self.assertFalse((installed / "onboarding.md").exists())
+        self.assertFalse((installed / "SKILL.md").is_symlink())
+        self.assertEqual(victim.read_text(), "keep\n")
 
     def test_invalid_json_stops_before_any_change(self):
         (self.project / ".codex").mkdir()

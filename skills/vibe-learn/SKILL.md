@@ -40,7 +40,9 @@ for pending decisions, then read their complete sections and other topics releva
 to the task. An initial excerpt is not evidence that nothing is pending.
 Resume without repeating completed onboarding or bypassing a pending Design or
 Implementation checkpoint.
-Set `Learning mode: active` if the user is resuming paused learning. If onboarding
+Set `Learning mode: active` if the user is resuming paused learning. If the
+profile says `Teach mode: on`, stay in teach mode (see behavior.md) until the
+learner says "back to building". If onboarding
 is incomplete, ask only the unanswered questions. Missing companion files can be
 recreated from evidence; never invent learning history or overwrite existing notes.
 

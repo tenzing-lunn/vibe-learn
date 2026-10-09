@@ -13,13 +13,15 @@ code, dependencies, Git history, other projects, the vibe-learn install, and
 
 In the commands below, replace `<this skill's folder>` with the absolute path of
 the folder this SKILL.md was loaded from (for example
-`<project>/.agents/skills/vibe-learn-reset`). Replace every placeholder with its
-actual value, safely quoted; never pass a placeholder literally.
+`/path/to/project/.agents/skills/vibe-learn-reset`), and `<project directory>`
+with the absolute path of the user's current working directory; use the same value
+in both commands. Replace every placeholder with its actual value, safely quoted;
+never pass a placeholder literally.
 
 1. Run the read-only preview for the user's current project directory:
 
    ```sh
-   python3 "<this skill's folder>/reset.py" --cwd "<absolute project directory>"
+   python3 "<this skill's folder>/reset.py" --cwd "<project directory>"
    ```
 
    The helper uses vibe-learn's project-boundary lookup. If it reports
@@ -36,19 +38,20 @@ actual value, safely quoted; never pass a placeholder literally.
    Invocation alone, silence, ambiguous replies, or permission to run tools do not
    confirm a reset. Cancel makes no changes, including to learner notes.
 
-3. Only after **Reset learning**, run the helper with the original working directory
+3. Only after **Reset learning**, run the helper with the same project directory
    and the preview's exact `confirmation` value:
 
    ```sh
-   python3 "<this skill's folder>/reset.py" --cwd "<original cwd>" --confirm "<confirmation>"
+   python3 "<this skill's folder>/reset.py" --cwd "<project directory>" --confirm "<confirmation>"
    ```
 
    If the target or notes changed, preview again and get new confirmation. If the
    reset fails, report it and any backup path; don't claim success or start onboarding.
    Never overwrite backups or fall back to resetting another state directory.
 
-4. On success, show the backup path. Read `../vibe-learn/SKILL.md` (the vibe-learn
-   skill beside this one) and resume it with the new incomplete profile. Discard
+4. On success, show the backup path. Read
+   `<this skill's folder>/../vibe-learn/SKILL.md` (the vibe-learn skill installed
+   beside this one) and resume it with the new incomplete profile. Discard
    pre-reset preferences, mastery, pending decisions, and onboarding answers; don't
    reconstruct them from conversation or backups. Inspect actual code to rebuild
    the map. Begin fresh onboarding with one question at a time. Backup notes are

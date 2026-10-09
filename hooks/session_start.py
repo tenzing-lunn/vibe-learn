@@ -68,7 +68,7 @@ def restore(payload):
     if state is None:
         return None
     # Installing vibe-learn alone doesn't enable learning in every repository.
-    # First-time onboarding happens through the Learn skill, not this hook.
+    # First-time onboarding happens through the vibe-learn skill, not this hook.
     if not profile_is_active(state / "profile.md"):
         return None
 

@@ -34,6 +34,7 @@ Capability goal: [optional answer]
 Checkpoint frequency: Normal
 Question style: Open-ended
 Implementation style: AI writes code
+Journal: on
 
 ## Strong Concepts
 No demonstrated understanding recorded yet.
@@ -53,20 +54,7 @@ None recorded yet.
 No learning events recorded yet.
 ```
 
-As learning occurs, add a `## Topic` with concise bullets under Introduced,
-Demonstrated understanding, and Needs reinforcement. Record reasoning evidence,
-not quotations of a whole exchange. Product preferences establish requirements;
-they aren't evidence of engineering understanding. Keep learner-proposed reasoning
-distinct from concepts the agent explained. Consolidate repeated entries. Keep each
-topic independently readable so it can be loaded without the whole file.
-While waiting on a checkpoint, keep a short `## Pending decision` section
-with the proposed approach and what reply is awaited. Remove it once resolved.
-Include the checkpoint's decision name and stage: awaiting reasoning, choice
-confirmation, or implementation approval. Record confirmed choices in the map
-without claiming they are implemented. Keep any proposed coding scope explicit.
-Confirmation covers only the proposal presented. Don't append unmentioned fields,
-behaviors, rejected alternatives, or reasons to the chosen design. Mark unresolved
-details unknown and the agent's suggestions proposed; never attribute them to the learner.
+Rules for adding to progress.md are in behavior.md under Preserve evidence.
 
 ## project-map.md
 

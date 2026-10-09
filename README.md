@@ -21,7 +21,9 @@ or experienced engineers exploring an unfamiliar stack.
 ## Get started
 
 You need [Python 3](https://www.python.org/downloads/) (no extra packages) and
-[Git](https://git-scm.com/downloads). From your project folder, run:
+[Git](https://git-scm.com/downloads). Tested on macOS and Linux. Open a terminal
+in your project folder (for a new project, make an empty folder and `cd` into it),
+then run:
 
 ```sh
 git clone https://github.com/tenzing-lunn/vibe-learn.git
@@ -42,9 +44,10 @@ Then start learning in your agent:
 | --- | --- | --- |
 | Claude Code | `/vibe-learn` | `/vibe-learn-reset` |
 | Codex | `$vibe-learn` | `$vibe-learn-reset` |
-| Gemini CLI / other | "Use the vibe-learn skill" | "Use the vibe-learn-reset skill" |
+| Gemini CLI / other | "Read `.agents/skills/vibe-learn/SKILL.md` and follow it." | "Read `.agents/skills/vibe-learn-reset/SKILL.md` and follow it." |
 
-Setup asks one question at a time. Pick **Use defaults** to skip preference setup.
+The first time, the agent asks a few setup questions, one at a time. Pick **Use
+defaults** to skip preference setup.
 Then ask the agent to build something. Starting fresh or joining an unfamiliar
 repository both work. For an existing repository, the agent first inspects the code
 and sketches a small system map.
@@ -56,7 +59,7 @@ Running it again changes nothing unless the clone moved or vibe-learn was update
 
 | Agent | Skills copied to | Resumes learning via |
 | --- | --- | --- |
-| Claude Code | `.claude/skills/` | a SessionStart hook in `.claude/settings.json` |
+| Claude Code | `.claude/skills/` | a SessionStart hook in `.claude/settings.local.json` (this computer only) |
 | Codex | `.agents/skills/` | a SessionStart hook in `.codex/hooks.json`, plus a marked line in `AGENTS.md` as a backup |
 | Gemini CLI | `.agents/skills/` | a marked line in `GEMINI.md` |
 | Other | `.agents/skills/` | a marked line in `AGENTS.md` |
@@ -74,8 +77,11 @@ mid-task: start a design in Claude Code, answer the next question in Codex, and 
 pending checkpoint, your preferences, and teach mode carry over. Use one agent at a
 time per project so two agents don't edit the notes at once.
 
-Setup prints suggested `.gitignore` lines (`vibe-learn/` and `.vibe-notes/`) but
-doesn't edit `.gitignore` for you.
+The hook files hold your clone's full path, so they only work on this computer.
+On another computer, clone vibe-learn and rerun setup there.
+
+Setup prints suggested `.gitignore` lines (`vibe-learn/`, `.vibe-notes/`, and
+`.claude/settings.local.json`) but doesn't edit `.gitignore` for you.
 
 ## What it feels like
 
@@ -209,7 +215,8 @@ On top of VibeWise's loop, vibe-learn adds:
 - **Analogies.** Complex code gets a simple everyday analogy, mapped back to the real
   code, with a note on where the analogy breaks down.
 - **Teach mode.** Say "teach mode" to explore and ask questions while the agent
-  changes no files. Say "back to building" to continue.
+  changes no project files (it only updates its notes). Say "back to building" to
+  continue.
 - **"What are we making?"** Ask any time for a System check: what the project is
   for, what's built, what's decided but not built yet, and what's still open.
 
@@ -245,8 +252,8 @@ your experience level or preferences, just tell the agent; no reset is needed.
 
 ## Updating
 
-From your project folder, pull the latest version and rerun setup to copy the
-updated skills:
+From your project folder, pull the latest version, then rerun setup. Rerunning is
+required: it copies the updated skills that your agents load.
 
 ```sh
 git -C vibe-learn pull
