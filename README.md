@@ -2,32 +2,52 @@
 
 **You build. AI writes. You understand what you built.**
 
-A learning layer that sits on top of your AI coding agent. Instead of handing the
-agent a task and getting back code you can't explain, the agent **asks for your
-approach first**, helps you examine tradeoffs, and explains unfamiliar concepts.
-You shape the design and decide when it's ready to implement. The agent writes the
-code, then explains what it changed and why, and keeps a plain-language manual of
-your project as it grows.
-
-Works with **Claude Code**, **Codex**, **Gemini CLI**, and any agent that reads
-`AGENTS.md` and `.agents/skills/`.
+AI coding agents can write a whole feature in seconds and leave you with code you
+can't explain, debug, or extend. vibe-learn changes how your agent works with you:
+before writing code, it **asks for your approach**, helps you examine tradeoffs,
+and explains unfamiliar concepts. You make the design calls and decide when it's
+ready to implement. The agent writes the code, explains what it changed and why,
+and keeps a plain-language manual of your project as it grows.
 
 For anyone who wants to learn as they build: aspiring engineers, junior developers,
 or experienced engineers exploring an unfamiliar stack.
 
-> vibe-learn is built on [VibeWise](https://github.com/nykooi1/vibe-wise) by Noah Kim,
-> a Claude Code plugin, and extends it to other agents with a few new features.
+Works with **Claude Code**, **Codex**, **Gemini CLI**, and any agent that reads
+`AGENTS.md`. Needs only Python 3, with no packages, accounts, or telemetry.
+
+```text
+You:   A note can be in several folders. Deleting a folder should delete its notes.
+
+Agent: ✦ Build checkpoint: Deleting a shared note
+
+       "Trip ideas" is in both Travel and Summer. If deleting Travel deletes
+       its notes, "Trip ideas" also disappears from Summer.
+
+       When someone deletes Travel, what should happen to that note in Summer?
+```
+
+([See a longer example](#what-it-feels-like).)
+
+> vibe-learn is built on [VibeWise](https://github.com/nykooi1/vibe-wise), Noah Kim's
+> Claude Code and Codex plugin. It adds Gemini CLI and other `AGENTS.md` agents,
+> switching agents mid-project, predictions, a learning journal, and teach mode.
 
 ## Get started
 
 You need [Python 3](https://www.python.org/downloads/) (no extra packages) and
-[Git](https://git-scm.com/downloads). Tested on macOS and Linux. Open a terminal
-in your project folder (for a new project, make an empty folder and `cd` into it),
-then run:
+[Git](https://git-scm.com/downloads). Tested on macOS and Linux; on Windows, use
+WSL. Check that `python3 --version` works in your terminal.
+
+vibe-learn lives **inside each project you use it with**: your agent's hooks point
+at the clone, so keep it there. Open a terminal in your project folder (for a new
+project, make an empty folder and `cd` into it), then clone it:
 
 ```sh
 git clone https://github.com/tenzing-lunn/vibe-learn.git
 ```
+
+If your project uses Git, add `vibe-learn/` to its `.gitignore` (setup prints the
+full list of suggested lines).
 
 Then run setup. It asks which agents you use and sets up only those:
 
@@ -36,19 +56,19 @@ python3 vibe-learn/setup.py
 ```
 
 Or skip the question with `--agents`, e.g. `python3 vibe-learn/setup.py --agents codex,claude`
-(choices: `claude`, `codex`, `gemini`, `other`).
+(choices: `claude`, `codex`, `gemini`, `other`). Use `--agents` if your AI agent
+runs setup for you, since it can't answer the question.
 
 Then start learning in your agent:
 
-| Agent | Start | Reset |
+| Agent | Start | Reset (start this project's learning over) |
 | --- | --- | --- |
 | Claude Code | `/vibe-learn` | `/vibe-learn-reset` |
 | Codex | `$vibe-learn` | `$vibe-learn-reset` |
 | Gemini CLI / other | "Read `.agents/skills/vibe-learn/SKILL.md` and follow it." | "Read `.agents/skills/vibe-learn-reset/SKILL.md` and follow it." |
 
-The first time, the agent asks a few setup questions, one at a time. Pick **Use
-defaults** to skip preference setup.
-Then ask the agent to build something. Starting fresh or joining an unfamiliar
+The first time, the agent asks a few setup questions, one at a time (or choose
+**Use defaults**). Then ask the agent to build something. Starting fresh or joining an unfamiliar
 repository both work. For an existing repository, the agent first inspects the code
 and sketches a small system map.
 
@@ -83,7 +103,8 @@ The hook files hold your clone's full path, so they only work on this computer.
 On another computer, clone vibe-learn and rerun setup there.
 
 Setup prints suggested `.gitignore` lines (`vibe-learn/`, `.vibe-notes/`, and
-`.claude/settings.local.json`) but doesn't edit `.gitignore` for you.
+`.claude/settings.local.json`) but doesn't edit `.gitignore` for you. If you use
+Codex, also ignore `.codex/hooks.json`, which holds this computer's path to the clone.
 
 ## What it feels like
 
@@ -91,8 +112,7 @@ You're building a Notion-style notes app: users sign in, create and edit private
 notes, and organize them into folders. Here, you're working through how notes and
 folders relate, and what should happen when someone deletes a folder.
 
-This condensed example is adapted from a real VibeWise session. Later implementation
-steps are illustrative; intervening design discussions are omitted.
+Condensed from a real session; some steps are skipped.
 
 **You:**
 
@@ -105,7 +125,8 @@ A note can be in several folders. Deleting a folder should delete its notes.
 ```text
 ✦ Build checkpoint: Deleting a shared note
 
-"Trip ideas" is in both Travel and Summer. Deleting it removes it from both.
+"Trip ideas" is in both Travel and Summer. If deleting Travel deletes its notes,
+"Trip ideas" also disappears from Summer.
 
 When someone deletes Travel, what should happen to that note in Summer?
 ```
@@ -180,7 +201,8 @@ It's still in Summer, and the notes table still has one row for it.
 
 - Added the schema migration: each membership references one note and one folder.
 - Added folder deletion: removes the folder and its links, preserving note content.
-- Tests for shared notes and unfiled notes both passed, matching your prediction.
+- Tests for shared and unfiled notes passed. As you predicted, "Trip ideas" stays
+  in Summer with one row in notes.
 
 Updated vibe-journal.md: "Key Flows → Deleting a folder".
 ```
@@ -191,34 +213,36 @@ Answer in plain English; ask for more help or say "skip" whenever you want.
 
 ## How it works
 
-| Checkpoint | What happens |
+| Checkpoint | What you do |
 | --- | --- |
-| **Build** | You reason through how to approach the problem. |
-| **Design** | Review the design. **Confirm and continue** records it; no code yet. |
-| **Implementation** | Review the specific changes. **Implement this step** authorizes the agent to make them. |
+| **Build** | Explain in your own words how you'd approach the problem; the agent gives feedback. |
+| **Design** | Review the proposed design. **Confirm and continue** records it; no code yet. |
+| **Implementation** | Review the specific changes and predict what they'll do. **Implement this step** lets the agent write the code. |
 
-These aren't three mandatory stops. When ready to code, the Implementation
-checkpoint also confirms the design. Both confirmations offer **Discuss** to ask
+You won't always see all three. If a design is ready to build right away, confirming
+the Implementation checkpoint approves the design too. Both confirmations offer **Discuss** to ask
 questions or explore alternatives first. Agents with a built-in picker (like Claude
 Code) show these as choices; others list numbered options in chat.
 
 When the agent proposes extra implementation details, it lists them separately from
 your decisions so you can question or change any of them.
 
-On top of VibeWise's loop, vibe-learn adds:
+Along the way:
 
-- **Predict first.** Before a change is made, you predict what it will do; the
-  implementation report compares your prediction with what happened.
+- **Predict first.** Before a meaningful change, you say what you expect it to do
+  (how often depends on checkpoint frequency). The implementation report compares
+  your prediction with what actually happened.
 - **Learning journal.** `vibe-journal.md` at your project root is a plain-language
   manual of what you've built (big picture, components, key flows, details) in
-  vocabulary you've learned. It's updated after each implementation.
+  vocabulary you've learned. It's updated after each implementation. Say you don't
+  want a journal to turn it off.
 - **Review when it matters.** When new work builds on something you learned earlier,
   the agent brings that lesson back and asks you to apply it. No timers or drills.
 - **Analogies.** Complex code gets a simple everyday analogy, mapped back to the real
   code, with a note on where the analogy breaks down.
 - **Teach mode.** Say "teach mode" to explore and ask questions while the agent
-  changes no project files (it only updates its notes). Say "back to building" to
-  continue.
+  changes no project files (it only updates its notes). Requests to implement wait
+  until you say "back to building".
 - **"What are we making?"** Ask any time for a System check: what the project is
   for, what's built, what's decided but not built yet, and what's still open.
 
@@ -228,16 +252,18 @@ Experience changes the support you get, not your ownership of decisions:
 
 | Level | Teaching approach |
 | --- | --- |
-| Beginner | Explain unfamiliar pieces, use diagrams, ask smaller reasoning questions. |
+| Beginner | More grounding: explain unfamiliar pieces and use diagrams. |
 | Intermediate | Less introductory context; explore interactions and tradeoffs. |
 | Advanced | Probe difficult constraints, failure modes, and design assumptions. |
 
-Checkpoint frequency (Light, Normal, or Frequent) is a separate setting. Just tell
-the agent what you want:
+Support also adapts per topic as you show what you understand. Checkpoint frequency
+(Light, Normal, or Frequent), question style, and who writes the code are separate
+settings. Just tell the agent what you want:
 
 - "Use fewer checkpoints."
 - "Focus on backend architecture."
 - "Use multiple-choice questions."
+- "Let me write some of the code."
 - "Just implement this one."
 - "Pause learning." Resume by starting vibe-learn again.
 
@@ -273,6 +299,16 @@ Run the tests from the vibe-learn folder:
 
 ```sh
 python3 -B -m unittest discover -s tests -v
+```
+
+Standard library only. The layout:
+
+```text
+setup.py                  installer, run from your project to set up each agent
+hooks/session_start.py    restores learning context when an agent session starts
+skills/vibe-learn/        the learning skill: SKILL.md plus behavior, onboarding, and note templates
+skills/vibe-learn-reset/  backs up and resets this project's learning notes
+tests/                    unittest suite
 ```
 
 ## License

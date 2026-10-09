@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "skills/vibe-learn-reset/reset.py"
-spec = importlib.util.spec_from_file_location("vibe_wise_reset", SCRIPT)
+spec = importlib.util.spec_from_file_location("vibe_learn_reset", SCRIPT)
 reset_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(reset_module)
 
