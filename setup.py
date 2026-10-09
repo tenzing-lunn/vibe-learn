@@ -2,7 +2,8 @@
 
 Run from your project after cloning:  python3 vibe-learn/setup.py
 It asks which coding agents you use and sets up only those, inside this project.
-Existing files are added to, never replaced. Running it again changes nothing
+Your existing files are added to, never replaced; the installed skill folders
+are refreshed from this clone. Running it again changes nothing
 unless this clone moved or its skill files changed.
 """
 
@@ -109,6 +110,32 @@ def plan_hook(path, agent):
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
+def plan_unhook(path):
+    """Return JSON text without our hook, or None if it isn't there.
+
+    Earlier versions put Claude Code's hook in the shared .claude/settings.json.
+    """
+    if not path.exists():
+        return None
+    data = read_json(path)
+    hooks = data.get("hooks")
+    groups = hooks.get("SessionStart") if isinstance(hooks, dict) else None
+    if not isinstance(groups, list):
+        return None
+    ours = (hook_command(),)
+    changed = False
+    for group in groups:
+        if isinstance(group, dict) and isinstance(group.get("hooks"), list):
+            kept = [h for h in group["hooks"] if not (isinstance(h, dict) and (
+                h.get("command") in ours or is_stale_copy(h.get("command", ""))))]
+            changed = changed or len(kept) != len(group["hooks"])
+            group["hooks"] = kept
+    if not changed:
+        return None
+    groups[:] = [g for g in groups if not (isinstance(g, dict) and g.get("hooks") == [])]
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+
 def plan_line(path):
     """Return instruction-file text containing our marked block, or None if current."""
     text = read_text(path)
@@ -164,6 +191,12 @@ def plan(project, agents):
             check_target(path, project)
             if path not in files:
                 files[path] = plan_hook(path, agent) if mode == "hook" else plan_line(path)
+    if "claude" in agents:
+        shared = project / ".claude/settings.json"
+        check_target(shared, project)
+        text = plan_unhook(shared)
+        if text is not None:
+            files[shared] = text
     return skills, files
 
 

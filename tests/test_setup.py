@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -111,6 +112,21 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(text.count("<!-- vibe-learn:start -->"), 1)
         self.assertNotIn("RESUME", text)
         self.assertTrue(text.startswith("Intro\n") and text.endswith("Outro\n"))
+
+    def test_upgrade_moves_claude_hook_out_of_shared_settings(self):
+        (self.project / ".claude").mkdir()
+        shared = self.project / ".claude/settings.json"
+        ours = "python3 " + shlex.quote(str(self.clone / "hooks/session_start.py"))
+        shared.write_text(json.dumps({"permissions": {"allow": ["Bash(ls)"]}, "hooks": {
+            "SessionStart": [{"hooks": [{"type": "command", "command": ours}]},
+                             {"hooks": [{"type": "command", "command": "echo mine"}]}]}}))
+        self.ok("--agents", "claude")
+        settings = self.json(".claude/settings.json")
+        self.assertEqual(settings["permissions"], {"allow": ["Bash(ls)"]})
+        self.assertEqual(self.commands(".claude/settings.json"), ["echo mine"])
+        self.assertEqual(self.commands(".claude/settings.local.json"), [ours])
+        result = self.ok("--agents", "claude")
+        self.assertNotIn("settings.json", result.stdout.replace("settings.local.json", ""))
 
     def test_unmatched_markers_stop_without_touching_user_text(self):
         for text in ("# Rules\n<!-- vibe-learn:start -->\nMY RULE\n",

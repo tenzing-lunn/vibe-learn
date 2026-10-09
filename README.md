@@ -54,7 +54,9 @@ and sketches a small system map.
 
 ### What setup changes
 
-Setup only works inside your project and never replaces your files; it adds to them.
+Setup only works inside your project and never replaces your own files; it adds to
+them. The vibe-learn skill folders it installs are replaced on each update, so don't
+edit them.
 Running it again changes nothing unless the clone moved or vibe-learn was updated.
 
 | Agent | Skills copied to | Resumes learning via |

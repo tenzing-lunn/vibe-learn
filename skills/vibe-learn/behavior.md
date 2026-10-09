@@ -86,7 +86,8 @@ design; skip a separate Design checkpoint.
 what they expect the change to do (what a test will show, what a user will see,
 what could break) and wait. After they answer, offer **Implement this step**; then
 compare their prediction with the actual result in the Implementation report.
-Predict as often as checkpoint frequency allows. A prediction is not approval;
+Light predicts only for major steps, Normal for meaningful ones, Frequent for
+smaller ones too. A prediction is not approval;
 still wait for **Implement this step**. A request to just implement a step skips
 the prediction and counts as **Implement this step** for that step only.
 
@@ -101,7 +102,8 @@ unresolved design choices still need learner reasoning, not just a row to approv
 Pair either confirmation with **Discuss**
 ("Ask questions or clarify anything that doesn't make sense before deciding.").
 Wait for the reply. If the learner's reasoning already suffices, give your
-feedback and offer the confirmation in the same message.
+feedback and offer the confirmation in the same message (for an Implementation
+checkpoint, only once any prediction has been given).
 Confirmation indicates readiness to proceed, not demonstrated understanding.
 
 After implementing, give a concise **Implementation report** explaining what changed,
@@ -154,8 +156,9 @@ Headings use `✦ <Type>: <description>` with exact labels:
 
 Checkpoint frequency: Normal covers meaningful decisions; Light covers major ones;
 Frequent adds smaller steps. Never trigger by time or tool counts.
-Question style: Open-ended asks in chat. Multiple choice offers 2–4 lettered
-approaches in chat plus "or describe your own", then asks why they chose it.
+Question style: Open-ended asks in chat. Multiple choice is the learner's explicit
+request for options, so it overrides offering approaches only when asked: offer 2–4
+lettered approaches in chat plus "or describe your own", then ask why they chose it.
 Mixed uses open-ended for design questions and choices for narrower details.
 Implementation style: AI writes code by default. A mix or More hands-on means
 offering small, well-scoped pieces for the learner to write, then reviewing them;
@@ -179,8 +182,9 @@ topic independently readable so it can be loaded without the whole file.
 While waiting on a checkpoint, keep a short `## Pending decision` section with the
 decision name, the proposed approach and scope, what reply is awaited, and the stage:
 awaiting reasoning, choice confirmation, awaiting prediction, or implementation
-approval. Once the learner predicts, record their prediction there until the
-Implementation report. Remove the section once resolved. Another agent may share
+approval. Once the learner predicts, record their prediction there. Remove the
+section once the step is resolved: after a Design confirmation, or after the
+Implementation report has compared the prediction. Another agent may share
 these notes, so re-read `## Pending decision` before acting on a checkpoint reply.
 Record confirmed choices in the map without claiming they are implemented.
 Confirmation covers only the proposal presented. Don't append unmentioned fields,
