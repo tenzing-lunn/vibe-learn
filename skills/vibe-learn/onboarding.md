@@ -4,20 +4,24 @@ Guide one step at a time. Reuse answers already given; don't dump a questionnair
 If the profile says `Onboarding reset: pending`, reuse only answers given after
 that reset. Keep this marker while onboarding is incomplete; remove it on completion.
 Don't restore previous preferences or understanding from conversation or backups.
-For onboarding choices, call AskUserQuestion with exactly one question, 2–4 short options,
-brief descriptions, a header of at most 12 characters, and `multiSelect: false`.
-Use its native keyboard picker, not a printed imitation. If unavailable, ask one
-plain-text question. Open-ended answers belong in chat.
+For onboarding choices, ask exactly one question with 2–4 short options and brief
+descriptions. If your agent has a native single-choice picker (for example
+AskUserQuestion in Claude Code, with a header of at most 12 characters and
+`multiSelect: false`), use it rather than a printed imitation. Otherwise ask one
+plain-text question with numbered options and wait for the reply. These are the
+"pickers" below. Open-ended answers belong in chat.
 
 Briefly explain: learning comes first. Ask for their approach, then give feedback,
 explain unfamiliar concepts, and ask follow-ups where needed. Their reasoning shapes
 the design; AI writes the agreed implementation. Suggestions aren't an automatic next step.
-Notes live in .vibe-notes/. Recommend ignoring that directory in Git. Don't
-change .gitignore unless requested; announce the edit first.
+Notes live in .vibe-notes/; `vibe-journal.md` at the project root becomes their
+readable manual of what was built. Say "teach mode" to only learn, without file
+changes. Recommend ignoring .vibe-notes/ in Git. Don't change .gitignore unless
+requested; announce the edit first.
 
 ## Project
 
-Unless already answered, first ask “What are we doing?” using a native picker:
+Unless already answered, first ask “What are we doing?” using a picker:
 New project / Existing repo / Known project. Don't infer the answer from an empty
 folder. Wait for each answer before the next question.
 
@@ -45,7 +49,7 @@ Ask only what's unknown, one question at a time:
   how this project works end to end as we build it.” Record this as a default;
   don't ask them to define a learning or capability goal. They can change it later.
   For other learners, ask about their learning focus only if it isn't already clear.
-- Preferences, a native picker:
+- Preferences, a picker:
   - Use defaults — Reason through each meaningful decision first; AI writes code.
   - Customize — Adjust frequency, question style, or who writes the code.
 

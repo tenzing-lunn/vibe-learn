@@ -16,7 +16,8 @@ import sys
 
 
 CLONE = Path(__file__).resolve().parent
-SKILL = CLONE / "skills" / "vibe-learn"
+# Installed side by side; the reset skill finds vibe-learn as its sibling.
+SKILLS = [CLONE / "skills" / "vibe-learn", CLONE / "skills" / "vibe-learn-reset"]
 HOOK = CLONE / "hooks" / "session_start.py"
 
 # key: (display name, skill folder, how learning resumes, file that does it)
@@ -115,11 +116,17 @@ def plan_line(path):
     return None if new == text else new
 
 
-def skill_differs(dest):
+def skill_differs(source, dest):
+    """True if any file in source is missing or different in dest, at any depth."""
     if not dest.exists():
         return True
-    comparison = filecmp.dircmp(str(SKILL), str(dest))
-    return bool(comparison.left_only or comparison.diff_files or comparison.funny_files)
+    pending = [filecmp.dircmp(str(source), str(dest))]
+    while pending:
+        comparison = pending.pop()
+        if comparison.left_only or comparison.diff_files or comparison.funny_files:
+            return True
+        pending.extend(comparison.subdirs.values())
+    return False
 
 
 def plan(project, agents):
@@ -127,11 +134,12 @@ def plan(project, agents):
     skills, files = [], {}
     for agent in agents:
         _, skill_dir, mode, target = AGENTS[agent]
-        dest = project / skill_dir / "vibe-learn"
-        check_target(dest)
+        for source in SKILLS:
+            dest = project / skill_dir / source.name
+            check_target(dest)
+            if (source, dest) not in skills:
+                skills.append((source, dest))
         check_target(project / target)
-        if dest not in skills:
-            skills.append(dest)
         path = project / target
         if path not in files:
             files[path] = plan_hook(path, agent) if mode == "hook" else plan_line(path)
@@ -140,11 +148,12 @@ def plan(project, agents):
 
 def apply(skills, files):
     changes = []
-    for dest in skills:
+    for source, dest in skills:
         status = "unchanged"
-        if skill_differs(dest):
+        if skill_differs(source, dest):
             status = "updated" if dest.exists() else "created"
-            shutil.copytree(str(SKILL), str(dest), dirs_exist_ok=True)
+            shutil.copytree(str(source), str(dest), dirs_exist_ok=True,
+                            ignore=shutil.ignore_patterns("__pycache__"))
         changes.append((status, dest))
     for path, text in files.items():
         if text is None:
@@ -212,6 +221,7 @@ def main(argv=None):
     names = [AGENTS[a][0] for a in agents]
     print("\nStart learning: $vibe-learn in Codex, /vibe-learn in Claude Code;")
     print("in other agents, ask them to use the vibe-learn skill.")
+    print("Start over later with $vibe-learn-reset or /vibe-learn-reset.")
     if "codex" in agents:
         print("Codex will ask you to review and trust the new hook the first time it runs.")
     print("Suggested .gitignore lines (not added automatically):")

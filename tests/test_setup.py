@@ -26,7 +26,8 @@ class SetupTests(unittest.TestCase):
         clone = self.project / name
         clone.mkdir()
         shutil.copy(ROOT / "setup.py", clone)
-        shutil.copytree(ROOT / "skills/vibe-learn", clone / "skills/vibe-learn")
+        for skill in ("vibe-learn", "vibe-learn-reset"):
+            shutil.copytree(ROOT / "skills" / skill, clone / "skills" / skill)
         (clone / "hooks").mkdir()
         shutil.copy(ROOT / "hooks/session_start.py", clone / "hooks")
         return clone
@@ -141,6 +142,34 @@ class SetupTests(unittest.TestCase):
         self.assertIn("Unknown agents", self.setup("--agents", "notepad").stderr)
         self.assertIn("--agents", self.setup().stderr)
         self.assertEqual(list(self.project.iterdir()).count(self.project / ".agents"), 0)
+
+    def test_both_skills_installed_with_codex_explicit_only_policy(self):
+        self.ok("--agents", "codex,claude")
+        for base in (".agents/skills", ".claude/skills"):
+            for skill in ("vibe-learn", "vibe-learn-reset"):
+                folder = self.project / base / skill
+                self.assertTrue((folder / "SKILL.md").is_file())
+                policy = (folder / "agents/openai.yaml").read_text()
+                self.assertIn("allow_implicit_invocation: false", policy)
+
+    def test_changed_nested_skill_file_is_updated(self):
+        self.ok("--agents", "codex")
+        policy = self.project / ".agents/skills/vibe-learn/agents/openai.yaml"
+        policy.write_text("edited\n")
+        self.assertIn("updated", self.ok("--agents", "codex").stdout)
+        self.assertIn("allow_implicit_invocation", policy.read_text())
+
+    def test_installed_reset_works_without_the_clone(self):
+        self.ok("--agents", "other")
+        state = self.project / ".vibe-notes"
+        state.mkdir()
+        (state / "profile.md").write_text("Learning mode: active\n")
+        script = self.project / ".agents/skills/vibe-learn-reset/reset.py"
+        shutil.rmtree(self.clone)
+        result = subprocess.run([sys.executable, "-B", str(script), "--cwd", str(self.project)],
+                                capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["state"], str(state))
 
     def test_installed_hook_restores_an_active_project(self):
         self.ok("--agents", "codex")

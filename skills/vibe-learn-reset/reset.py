@@ -11,9 +11,19 @@ import sys
 import tempfile
 
 
-sys.dont_write_bytecode = True
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
-from session_start import state_directory
+def state_directory(cwd):
+    """Find the nearest notes directory without crossing a Git project boundary.
+
+    Same lookup as hooks/session_start.py. It's repeated here because setup.py
+    copies this skill into the project, away from the clone's hooks folder.
+    """
+    for directory in (cwd, *cwd.parents):
+        state = directory / ".vibe-notes"
+        if state.exists() or state.is_symlink():
+            return state if state.is_dir() and not state.is_symlink() else None
+        if (directory / ".git").exists():
+            break
+    return None
 
 
 FRESH = {

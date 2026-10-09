@@ -1,9 +1,10 @@
 # Local state templates
 
-Create only these three files in the chosen project's `.vibe-notes/`.
-Use the directory selected by SKILL.md.
-Replace bracketed values with actual evidence or “Not specified.” Keep the two
-status lines unformatted and near the top; the restoration hook reads them.
+Create only these three files in the chosen project's `.vibe-notes/`, plus
+`vibe-journal.md` beside that folder (the project root) after the first
+Implementation report. Use the directory selected by SKILL.md.
+Replace bracketed values with actual evidence or “Not specified.” Keep the status
+lines unformatted and near the top; the restoration hook reads `Learning mode`.
 Do not replace existing state with a fresh template.
 
 ## profile.md
@@ -13,6 +14,7 @@ Do not replace existing state with a fresh template.
 
 Learning mode: active
 Onboarding: complete
+Teach mode: off
 
 ## Project
 Situation: [New / Existing / Known]
@@ -55,7 +57,7 @@ As learning occurs, add a `## Topic` with concise bullets under Introduced,
 Demonstrated understanding, and Needs reinforcement. Record reasoning evidence,
 not quotations of a whole exchange. Product preferences establish requirements;
 they aren't evidence of engineering understanding. Keep learner-proposed reasoning
-distinct from concepts Claude explained. Consolidate repeated entries. Keep each
+distinct from concepts the agent explained. Consolidate repeated entries. Keep each
 topic independently readable so it can be loaded without the whole file.
 While waiting on a checkpoint, keep a short `## Pending decision` section
 with the proposed approach and what reply is awaited. Remove it once resolved.
@@ -64,7 +66,7 @@ confirmation, or implementation approval. Record confirmed choices in the map
 without claiming they are implemented. Keep any proposed coding scope explicit.
 Confirmation covers only the proposal presented. Don't append unmentioned fields,
 behaviors, rejected alternatives, or reasons to the chosen design. Mark unresolved
-details unknown and Claude's suggestions proposed; never attribute them to the learner.
+details unknown and the agent's suggestions proposed; never attribute them to the learner.
 
 ## project-map.md
 
@@ -95,3 +97,28 @@ or verified existing code; don't fill missing relationships with assumed designs
 [Unresolved technical choices and what needs inspection, including relevant stack,
 storage location/model, data structures, interfaces, and deployment choices.]
 ```
+
+## vibe-journal.md
+
+```markdown
+# [Project name] Journal
+
+A plain-language manual of what we've built, written with the words you've learned.
+
+## Big Picture
+[What the software does and its main parts, in a few sentences.]
+
+## Components
+[Each part: what it's responsible for, where it lives, what it talks to.]
+
+## Key Flows
+[Step-by-step walk-throughs of the important paths, e.g. "When a user saves a note…".]
+
+## Details
+[Mechanisms worth remembering, linked to the concepts behind them.]
+```
+
+Write the journal for the learner, not for the agent: use vocabulary they've been
+taught or demonstrated, define anything new in a phrase, and keep an analogy where
+one helped. Describe only implemented code, not plans; plans stay in project-map.md.
+Revise sections in place so it reads as a current manual, not a changelog.

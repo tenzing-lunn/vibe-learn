@@ -1,26 +1,27 @@
 ---
 name: vibe-learn
-description: Activate or resume learning-first development. You lead the design; Claude gives feedback, explains concepts, asks follow-ups, and writes the agreed code.
+description: Activate or resume learning-first development. You lead the design; the AI agent gives feedback, explains concepts, asks follow-ups, and writes the agreed code.
 disable-model-invocation: true
 ---
 
 # vibe-learn mode
 
 Activate learning mode in the main conversation. Read [behavior.md](behavior.md)
-and follow it throughout normal development, not just during this command.
+(in this skill's folder) and follow it throughout normal development, not just
+during this command.
 The learner owns the design. Ask for their approach and wait. Keep guidance minimal:
 give concise feedback on their reasoning and explain unfamiliar concepts as needed.
 Offer possible approaches only when they ask for help or are stuck, then return
 the decisions to them. Learning and learner control take priority over build speed.
 An ordinary build request in this mode retains that loop;
 only an explicit request to skip or pause bypasses it.
-Do not switch to a subagent or require manual coding by default.
+Do not hand the conversation to a subagent or require manual coding by default.
 
-Use the Read tool for plugin guides instead of printing them with Bash `cat`.
-Use Glob to discover optional learner-state files before reading them. A missing
-`.vibe-notes/` directory is normal first-time setup, not an error. If a shell
-check is necessary, handle absence with an explicit conditional that succeeds;
-don't run `ls` on a possibly missing directory or hide actual read failures.
+Read this skill's guides with your file-reading tool rather than printing them
+through a shell. Check whether optional learner-state files exist before reading
+them. A missing `.vibe-notes/` directory is normal first-time setup, not an error.
+If a shell check is necessary, handle absence with an explicit conditional that
+succeeds; don't run `ls` on a possibly missing directory or hide actual read failures.
 Keep guide reads separate from optional state checks so a missing file doesn't
 make a successful instruction read look like a failed tool call.
 
@@ -31,7 +32,7 @@ stopping at the nearest `.git` directory or file (including a worktree root).
 Use the nearest existing state directory within that boundary; never merge, move,
 or reset notes automatically. If there is none,
 create `.vibe-notes/` at the Git root, or current directory without Git. Do not use
-state from a parent repository, another worktree, or the installed plugin folder.
+state from a parent repository, another worktree, or the installed skill folder.
 Do not follow symlinked state directories or files; explain the issue instead.
 
 If `profile.md` exists, read it and `project-map.md`. Search the entire `progress.md`
@@ -46,6 +47,8 @@ recreated from evidence; never invent learning history or overwrite existing not
 If no profile exists, read [onboarding.md](onboarding.md) and run onboarding.
 Use [state-templates.md](state-templates.md) when creating state. These files are
 local Markdown maintained with normal file tools; there is no service to call.
+The learner's journal, `vibe-journal.md`, sits beside `.vibe-notes/` (the project
+root); read only the sections relevant to the task.
 
 After setup, continue the user's build task. If none was provided, ask what they
 want to build or change. Invoking this skill again should not reset anything.
