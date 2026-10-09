@@ -124,6 +124,13 @@ class SessionStartTests(unittest.TestCase):
         self.state(child, mode="paused")
         self.assertIsNone(self.run_hook(cwd=child))
 
+    def test_teach_mode_is_stated_before_anything_else(self):
+        state = self.state()
+        (state / "profile.md").write_text("Learning mode: active\nTeach mode: on\n")
+        self.assertTrue(self.context().startswith("TEACH MODE IS ON"))
+        (state / "profile.md").write_text("Learning mode: active\nTeach mode: off\n")
+        self.assertNotIn("TEACH MODE", self.context())
+
     def test_paused_state_is_not_reactivated_by_compaction(self):
         self.state(mode="paused")
         self.assertIsNone(self.run_hook(source="compact"))

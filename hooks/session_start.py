@@ -16,12 +16,12 @@ import sys
 CLONE = Path(__file__).resolve().parents[1]
 
 
-def profile_is_active(path):
-    """Check activation without copying learner notes into hook output."""
+def profile_mode(path):
+    """Return None (inactive), "active", or "teach", without copying learner notes."""
     # A linked profile could point outside the selected project's learning notes.
     if path.is_symlink() or not path.is_file():
-        return False
-    has_content = False
+        return None
+    has_content = teach = False
     try:
         with path.open(encoding="utf-8") as stream:
             # Scan the whole file: a paused marker can appear after a long profile.
@@ -29,12 +29,16 @@ def profile_is_active(path):
             for line in stream:
                 has_content = has_content or bool(line.strip())
                 if re.fullmatch(r"Learning mode:\s*paused\s*", line, re.IGNORECASE):
-                    return False
+                    return None
+                teach = teach or bool(
+                    re.fullmatch(r"Teach mode:\s*on\s*", line, re.IGNORECASE))
     except (OSError, UnicodeError):
         # Missing, unreadable, or invalid text isn't evidence of active learning.
-        return False
+        return None
     # Older profiles may lack an explicit mode. Preserve their restoration behavior.
-    return has_content
+    if not has_content:
+        return None
+    return "teach" if teach else "active"
 
 
 def state_directory(cwd):
@@ -69,7 +73,8 @@ def restore(payload):
         return None
     # Installing vibe-learn alone doesn't enable learning in every repository.
     # First-time onboarding happens through the vibe-learn skill, not this hook.
-    if not profile_is_active(state / "profile.md"):
+    mode = profile_mode(state / "profile.md")
+    if mode is None:
         return None
 
     # Bootstrap from source files instead of emitting partial notes or an incomplete
@@ -90,6 +95,15 @@ def restore(payload):
         "questions; do not repeat completed onboarding. If the profile is now "
         "paused, keep it paused: this hook is not an explicit vibe-learn invocation."
     )
+    if mode == "teach":
+        # Stated up front: an agent may act on a request before reading the notes.
+        context = (
+            "TEACH MODE IS ON for this project. Do not create, edit, or delete project "
+            "files or run commands that change the project, even if asked to skip "
+            "teaching or just implement; only .vibe-notes/ may be written. Explain "
+            "instead, and offer to switch back when the learner says \"back to "
+            "building\".\n\n" + context
+        )
     # Both agents add additionalContext to the model's context. These are reading
     # instructions for the agent; the hook itself hasn't loaded the map or progress.
     return {"hookSpecificOutput": {

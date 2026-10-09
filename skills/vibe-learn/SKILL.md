@@ -14,7 +14,7 @@ give concise feedback on their reasoning and explain unfamiliar concepts as need
 Offer possible approaches only when they ask for help or are stuck, then return
 the decisions to them. Learning and learner control take priority over build speed.
 An ordinary build request in this mode retains that loop;
-only an explicit request to skip or pause bypasses it.
+only an explicit request to skip or pause bypasses it, unless teach mode is on.
 Do not hand the conversation to a subagent or require manual coding by default.
 
 Read this skill's guides with your file-reading tool rather than printing them
@@ -41,8 +41,10 @@ to the task. An initial excerpt is not evidence that nothing is pending.
 Resume without repeating completed onboarding or bypassing a pending Design or
 Implementation checkpoint.
 Set `Learning mode: active` if the user is resuming paused learning. If the
-profile says `Teach mode: on`, stay in teach mode (see behavior.md) until the
-learner says "back to building". If onboarding
+profile says `Teach mode: on`, stay in teach mode until the learner says "back to
+building": explain and answer, but change no project files (only `.vibe-notes/`)
+and run no commands that change the project. Requests to skip teaching or "just
+implement" don't end teach mode; say so and offer to switch back. If onboarding
 is incomplete, ask only the unanswered questions. Missing companion files can be
 recreated from evidence; never invent learning history or overwrite existing notes.
 
