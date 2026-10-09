@@ -1,66 +1,80 @@
-<img src=".claude-plugin/icon.svg" alt="VibeWise brain with code brackets" width="96" height="96">
+# vibe-learn
 
-# VibeWise
+**You build. AI writes. You understand what you built.**
 
-**You build. AI writes.**
+A learning layer that sits on top of your AI coding agent. Instead of handing the
+agent a task and getting back code you can't explain, the agent **asks for your
+approach first**, helps you examine tradeoffs, and explains unfamiliar concepts.
+You shape the design and decide when it's ready to implement. The agent writes the
+code, then explains what it changed and why, and keeps a plain-language manual of
+your project as it grows.
 
-A Claude Code plugin that puts learning first and keeps you in control while AI writes the code you designed. Claude **asks for your approach first**, helps you examine tradeoffs, and explains unfamiliar concepts. You shape the design and decide when it's ready to implement. Claude writes the code, then explains what it changed and why.
+Works with **Claude Code**, **Codex**, **Gemini CLI**, and any agent that reads
+`AGENTS.md` and `.agents/skills/`.
 
-For anyone who wants to learn as they build—whether you're an aspiring engineer, a junior developer, or an experienced engineer exploring an unfamiliar stack. Practice planning how the pieces fit together, anticipating failures, and checking the result while keeping ownership of the decisions.
+For anyone who wants to learn as they build: aspiring engineers, junior developers,
+or experienced engineers exploring an unfamiliar stack.
+
+> vibe-learn is built on [VibeWise](https://github.com/nykooi1/vibe-wise) by Noah Kim,
+> a Claude Code plugin, and extends it to other agents with a few new features.
 
 ## Get started
 
-You need an up-to-date [Claude Code](https://code.claude.com/docs/en/setup) and
-[Python 3](https://www.python.org/downloads/). VibeWise uses Python to restore
-learning context and reset learning notes. No extra Python packages are needed.
+You need [Python 3](https://www.python.org/downloads/) (no extra packages) and
+[Git](https://git-scm.com/downloads). From your project folder, run:
 
-Install from the built-in **Anthropic Directory**. In Claude Code, run:
-
-```text
-/plugin install vibe-wise@anthropic-plugin-directory
+```sh
+git clone https://github.com/tenzing-lunn/vibe-learn.git
 ```
 
-Choose an installation scope and confirm. No marketplace setup is needed.
+Then run setup. It asks which agents you use and sets up only those:
 
-Restart Claude Code in the project you want to work on, then run:
-
-```text
-/vibe-wise:learn
+```sh
+python3 vibe-learn/setup.py
 ```
 
-Setup asks one question at a time. Use the arrow keys and Enter for choices; pick **Use defaults** to skip preference setup. Then ask Claude to build something. Starting fresh or joining an unfamiliar repository both work. For an existing repository, Claude first inspects the code and sketches a small system map.
+Or skip the question with `--agents`, e.g. `python3 vibe-learn/setup.py --agents codex,claude`
+(choices: `claude`, `codex`, `gemini`, `other`).
 
-<details>
-<summary>Alternative: install through GitHub</summary>
+Then start learning in your agent:
 
-If Anthropic Directory isn't available in your Claude Code version, use the GitHub
-marketplace. Choose one installation method; you don't need both.
+| Agent | Start | Reset |
+| --- | --- | --- |
+| Claude Code | `/vibe-learn` | `/vibe-learn-reset` |
+| Codex | `$vibe-learn` | `$vibe-learn-reset` |
+| Gemini CLI / other | "Use the vibe-learn skill" | "Use the vibe-learn-reset skill" |
 
-Run these commands **one at a time** in Claude Code. First, add the marketplace:
+Setup asks one question at a time. Pick **Use defaults** to skip preference setup.
+Then ask the agent to build something. Starting fresh or joining an unfamiliar
+repository both work. For an existing repository, the agent first inspects the code
+and sketches a small system map.
 
-```text
-/plugin marketplace add nykooi1/vibe-wise
-```
+### What setup changes
 
-After it finishes, install the plugin:
+Setup only works inside your project and never replaces your files; it adds to them.
+Running it again changes nothing unless the clone moved or vibe-learn was updated.
 
-```text
-/plugin install vibe-wise@vibe-wise
-```
+| Agent | Skills copied to | Resumes learning via |
+| --- | --- | --- |
+| Claude Code | `.claude/skills/` | a SessionStart hook in `.claude/settings.json` |
+| Codex | `.agents/skills/` | a SessionStart hook in `.codex/hooks.json` |
+| Gemini CLI | `.agents/skills/` | a marked line in `GEMINI.md` |
+| Other | `.agents/skills/` | a marked line in `AGENTS.md` |
 
-Enable automatic updates through `/plugin` → **Marketplaces** → **vibe-wise** →
-**Enable auto-update**. This is off by default for third-party marketplaces.
-Restart Claude Code, then run `/vibe-wise:learn` in your project.
+The hooks run `vibe-learn/hooks/session_start.py` from your clone, so keep the
+clone in place. If you move it, rerun setup. **Codex** asks you to review and trust
+the new hook the first time; learning resumes from your first message after that.
 
-</details>
+Setup prints suggested `.gitignore` lines (`vibe-learn/` and `.vibe-notes/`) but
+doesn't edit `.gitignore` for you.
 
 ## What it feels like
 
 You're building a Notion-style notes app: users sign in, create and edit private
 notes, and organize them into folders. Here, you're working through how notes and
-folders relate—and what should happen when someone deletes a folder.
+folders relate, and what should happen when someone deletes a folder.
 
-This condensed example is adapted from a real learning session. Later implementation
+This condensed example is adapted from a real VibeWise session. Later implementation
 steps are illustrative; intervening design discussions are omitted.
 
 **You:**
@@ -69,7 +83,7 @@ steps are illustrative; intervening design discussions are omitted.
 A note can be in several folders. Deleting a folder should delete its notes.
 ```
 
-**Claude:**
+**Agent:**
 
 ```text
 ✦ Build checkpoint: Deleting a shared note
@@ -85,7 +99,7 @@ When someone deletes Travel, what should happen to that note in Summer?
 Keep it in Summer. If it has no folders left, keep the note outside any folder.
 ```
 
-**Claude:**
+**Agent:**
 
 ```text
 That separates deleting a folder from deleting a note.
@@ -102,7 +116,7 @@ A links table with note_id and folder_id. Deleting a folder removes its links,
 not the notes.
 ```
 
-**Claude:**
+**Agent:**
 
 ```text
 Each link records one membership. Several links can point to the same note;
@@ -116,81 +130,77 @@ Proposed: store notes once and track folder membership in a links table.
 Deleting a folder removes its links and keeps the notes. This supports multiple
 folders per note; loading a folder's notes needs a lookup through those links.
 
-Confirming records this design. We still need to work through access rules
-and technology choices before writing code.
-
 ❯ 1. Confirm and continue
-     This approach makes sense to me; move to the next piece.
   2. Discuss
-     Ask questions or clarify anything that doesn't make sense before deciding.
-```
-
-**You:**
-
-```text
-Confirm and continue.
 ```
 
 *Later, after the remaining choices for this step are worked through...*
 
-**Claude:**
+**Agent:**
 
 ```text
 ✦ Implementation checkpoint: Folder membership
 
 I'll add the agreed tables and folder-deletion operation, then test that deleting
 a folder preserves its notes and their membership in other folders.
-This step builds storage behavior; the UI comes later.
 
-❯ 1. Implement this step
-     This approach makes sense to me; write the code for this step.
-  2. Discuss
-     Ask questions or clarify anything that doesn't make sense before deciding.
+Before I do: if someone deletes Travel, what do you expect the tests to show
+for "Trip ideas"?
 ```
 
 **You:**
 
 ```text
-Implement this step.
+It's still in Summer, and the notes table still has one row for it.
 ```
 
-*Claude writes the code and runs the tests.*
+*You choose **Implement this step**. The agent writes the code and runs the tests.*
 
-**Claude:**
+**Agent:**
 
 ```text
 ✦ Implementation report: Folder membership
 
 - Added the schema migration: each membership references one note and one folder.
 - Added folder deletion: removes the folder and its links, preserving note content.
-- Added and ran tests for shared notes and notes left without a folder; both passed.
+- Tests for shared notes and unfiled notes both passed, matching your prediction.
+
+Updated vibe-journal.md: "Key Flows → Deleting a folder".
 ```
 
-You don't need to know the answer already. Claude can explain unfamiliar concepts, sketch the relevant pieces, and help you tackle a smaller question. You stay involved in forming the plan. Answer in plain English; ask for more help or say “skip” whenever you want.
+You don't need to know the answer already. The agent can explain unfamiliar
+concepts, sketch the relevant pieces, and help you tackle a smaller question.
+Answer in plain English; ask for more help or say "skip" whenever you want.
 
-Describing what you want sets the requirements. Build Checkpoints ask you to work
-out how it should function; a feature preference doesn't approve an architecture.
+## How it works
 
 | Checkpoint | What happens |
 | --- | --- |
-| **Build** | You reason through how to approach the problem with Claude. |
-| **Design** | Review the design. **Confirm and continue** records it and continues planning; no code yet. |
-| **Implementation** | Review the specific code changes. **Implement this step** authorizes Claude to make them. |
+| **Build** | You reason through how to approach the problem. |
+| **Design** | Review the design. **Confirm and continue** records it; no code yet. |
+| **Implementation** | Review the specific changes. **Implement this step** authorizes the agent to make them. |
 
 These aren't three mandatory stops. When ready to code, the Implementation
-checkpoint also confirms the design, skipping a separate Design checkpoint.
-Both confirmations offer **Discuss** to ask questions, clarify anything confusing,
-or explore alternatives before deciding.
+checkpoint also confirms the design. Both confirmations offer **Discuss** to ask
+questions or explore alternatives first. Agents with a built-in picker (like Claude
+Code) show these as choices; others list numbered options in chat.
 
-When Claude proposes additional implementation details, it separates them from your
-decisions in a short list or table explaining each addition and why it matters.
-You can question or change any item before proceeding.
+When the agent proposes extra implementation details, it lists them separately from
+your decisions so you can question or change any of them.
 
-After implementation, Claude briefly explains what changed, how the key code works,
-why it fits your decision, any tests it added or updated and what they cover, and
-which checks ran with their results. Ask to dig deeper anywhere it's unclear.
+On top of VibeWise's loop, vibe-learn adds:
 
-Small diagrams help you trace data, understand relationships, and see how the system fits together.
+- **Predict first.** Before a change is made, you predict what it will do; the
+  implementation report compares your prediction with what happened.
+- **Learning journal.** `vibe-journal.md` at your project root is a plain-language
+  manual of what you've built (big picture, components, key flows, details) in
+  vocabulary you've learned. It's updated after each implementation.
+- **Review when it matters.** When new work builds on something you learned earlier,
+  the agent brings that lesson back and asks you to apply it. No timers or drills.
+- **Analogies.** Complex code gets a simple everyday analogy, mapped back to the real
+  code, with a note on where the analogy breaks down.
+- **Teach mode.** Say "teach mode" to explore and ask questions while the agent
+  changes no files. Say "back to building" to continue.
 
 ## Make it yours
 
@@ -202,48 +212,51 @@ Experience changes the support you get, not your ownership of decisions:
 | Intermediate | Less introductory context; explore interactions and tradeoffs. |
 | Advanced | Probe difficult constraints, failure modes, and design assumptions. |
 
-Everyone reasons first. Claude adapts to what you demonstrate and how familiar you
-are with the stack. Checkpoint frequency—Light, Normal, or Frequent—is separate.
+Checkpoint frequency (Light, Normal, or Frequent) is a separate setting. Just tell
+the agent what you want:
 
-- “Use fewer checkpoints.”
-- “Focus on backend architecture.”
-- “Use multiple-choice questions.”
-- “Just implement this one.”
-- “Pause learning.” Resume with `/vibe-wise:learn`.
+- "Use fewer checkpoints."
+- "Focus on backend architecture."
+- "Use multiple-choice questions."
+- "Just implement this one."
+- "Pause learning." Resume by starting vibe-learn again.
 
-Preferences, learning notes, and a project map live in `.vibe-wise/` in your project. Learning mode resumes in future sessions and after compaction. Add `.vibe-wise/` to your `.gitignore` to keep your notes out of Git; the plugin won't change it silently.
+Preferences, learning notes, and a project map live in `.vibe-notes/` in your
+project. Learning resumes in future sessions (and after compaction in Claude Code
+and Codex). No account, backend, or telemetry: notes are local Markdown files that
+your agent reads, so your agent's normal data settings apply.
 
-No extra account, backend, or telemetry. Saved notes are included in Claude's context, so your normal Claude Code data settings still apply.
-
-To start learning this project from scratch, run `/vibe-wise:reset`. It shows the
-project and asks **Cancel / Reset learning**. After confirmation, it backs up your
-profile, progress, and project map inside the notes directory's `backups/` folder,
-then restarts onboarding. Source code and other projects stay untouched. To change
-your experience level or preferences, just tell Claude; no reset is needed.
+To start learning this project from scratch, run the reset skill. It shows the
+project and asks **Cancel / Reset learning**. After you confirm, it backs up your
+profile, progress, and project map to `.vibe-notes/backups/`, then restarts
+onboarding. Source code, your journal, and other projects stay untouched. To change
+your experience level or preferences, just tell the agent; no reset is needed.
 
 ## Updating
 
-Open `/plugin` → **Installed**, select VibeWise, and choose **Update now**.
-For automatic updates, open **Marketplaces**, select the source you installed from,
-and enable auto-update if it's off.
-
-To update a directory installation from your terminal:
+From your project folder, pull the latest version and rerun setup to copy the
+updated skills:
 
 ```sh
-claude plugin update vibe-wise@anthropic-plugin-directory
+git -C vibe-learn pull
 ```
-
-If you installed through the GitHub marketplace instead:
 
 ```sh
-claude plugin marketplace update vibe-wise
-claude plugin update vibe-wise@vibe-wise
+python3 vibe-learn/setup.py
 ```
 
-Then restart Claude Code. Your project learning notes stay intact; no reset is needed.
-Run `claude plugin list` to check the installed version.
-[More about plugin updates](https://code.claude.com/docs/en/discover-plugins#keep-plugins-updated).
+Your learning notes and journal stay intact.
+
+## Development
+
+Run the tests from the vibe-learn folder:
+
+```sh
+python3 -B -m unittest discover -s tests -v
+```
 
 ## License
 
-[MIT](LICENSE). You can use, modify, and share this software, including commercially. Keep the license notice with copies. The software comes without a warranty.
+[MIT](LICENSE). Based on VibeWise, © 2026 Noah Kim, also MIT. You can use, modify,
+and share this software, including commercially. Keep the license notice with
+copies. The software comes without a warranty.
