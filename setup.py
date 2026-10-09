@@ -20,12 +20,14 @@ CLONE = Path(__file__).resolve().parent
 SKILLS = [CLONE / "skills" / "vibe-learn", CLONE / "skills" / "vibe-learn-reset"]
 HOOK = CLONE / "hooks" / "session_start.py"
 
-# key: (display name, skill folder, how learning resumes, file that does it)
+# key: (display name, skill folder, [(how learning resumes, file that does it)])
 AGENTS = {
-    "claude": ("Claude Code", ".claude/skills", "hook", ".claude/settings.json"),
-    "codex": ("Codex", ".agents/skills", "hook", ".codex/hooks.json"),
-    "gemini": ("Gemini CLI", ".agents/skills", "line", "GEMINI.md"),
-    "other": ("Other agent", ".agents/skills", "line", "AGENTS.md"),
+    "claude": ("Claude Code", ".claude/skills", [("hook", ".claude/settings.json")]),
+    # Codex skips project hooks until the user trusts them, and in `codex exec`.
+    # It always reads AGENTS.md, so the line there is the fallback.
+    "codex": ("Codex", ".agents/skills", [("hook", ".codex/hooks.json"), ("line", "AGENTS.md")]),
+    "gemini": ("Gemini CLI", ".agents/skills", [("line", "GEMINI.md")]),
+    "other": ("Other agent", ".agents/skills", [("line", "AGENTS.md")]),
 }
 # Session sources each agent documents for SessionStart. Codex has no "fork".
 MATCHERS = {
@@ -133,16 +135,17 @@ def plan(project, agents):
     """Work out every change before writing anything, so an error changes nothing."""
     skills, files = [], {}
     for agent in agents:
-        _, skill_dir, mode, target = AGENTS[agent]
+        _, skill_dir, resumes = AGENTS[agent]
         for source in SKILLS:
             dest = project / skill_dir / source.name
             check_target(dest)
             if (source, dest) not in skills:
                 skills.append((source, dest))
-        check_target(project / target)
-        path = project / target
-        if path not in files:
-            files[path] = plan_hook(path, agent) if mode == "hook" else plan_line(path)
+        for mode, target in resumes:
+            path = project / target
+            check_target(path)
+            if path not in files:
+                files[path] = plan_hook(path, agent) if mode == "hook" else plan_line(path)
     return skills, files
 
 

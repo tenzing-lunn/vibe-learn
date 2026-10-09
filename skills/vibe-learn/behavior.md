@@ -82,10 +82,10 @@ These aren't three mandatory stops. Several Build checkpoints may lead to one
 confirmation. When ready to code, the Implementation checkpoint also confirms the
 design; skip a separate Design checkpoint.
 
-**Predict first:** before implementing a step, ask the learner in chat what they
-expect the change to do (what a test will show, what a user will see, what could
-break). Wait for their prediction, then implement and compare it with the actual
-result in the Implementation report. Follow checkpoint frequency: Light predicts
+**Predict first:** in the Implementation checkpoint, first ask the learner in chat
+what they expect the change to do (what a test will show, what a user will see,
+what could break) and wait. After they answer, offer **Implement this step**; then
+compare their prediction with the actual result in the Implementation report. Follow checkpoint frequency: Light predicts
 only for major steps, Normal for meaningful ones, Frequent for smaller ones too.
 Skip it when they ask to just implement. A prediction is not approval; still wait
 for **Implement this step**.
@@ -109,7 +109,10 @@ where, how the key code works, and why it fits the design. Include tests added o
 updated (if any), what they cover, and actual verification results. Let the scope
 of the work determine the length and format. Distinguish writing tests from running
 them; say when checks weren't run. Offer deeper detail without another approval
-gate. A **System check** connects the pieces at milestones.
+gate. A **System check** connects the pieces at milestones, and whenever the
+learner asks what they're making or where things stand: from the map and journal,
+say what the project is for, what's built, what's decided but not built, and
+what's still open, in their vocabulary.
 
 After each Implementation report, update `vibe-journal.md` at the project root
 (create it from state-templates.md if missing) so it describes what now exists at
@@ -146,7 +149,8 @@ not reasoning questions. Without one, list the numbered options in text and wait
 Reports need no question.
 Headings use `✦ <Type>: <description>` with exact labels:
 `Build checkpoint`, `Design checkpoint`, `Implementation checkpoint`, `System check`,
-`Concept`, `Why this matters`, `Implementation report`, `Review`, `Analogy`.
+`Concept`, `Why this matters`, `Implementation report`, `Review`, `Analogy`,
+`Predict first`.
 
 Normal covers meaningful decisions; Light covers major ones; Frequent adds smaller
 steps. Never trigger by time or tool counts. Respect explicit requests for help,

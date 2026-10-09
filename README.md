@@ -57,13 +57,22 @@ Running it again changes nothing unless the clone moved or vibe-learn was update
 | Agent | Skills copied to | Resumes learning via |
 | --- | --- | --- |
 | Claude Code | `.claude/skills/` | a SessionStart hook in `.claude/settings.json` |
-| Codex | `.agents/skills/` | a SessionStart hook in `.codex/hooks.json` |
+| Codex | `.agents/skills/` | a SessionStart hook in `.codex/hooks.json`, plus a marked line in `AGENTS.md` as a backup |
 | Gemini CLI | `.agents/skills/` | a marked line in `GEMINI.md` |
 | Other | `.agents/skills/` | a marked line in `AGENTS.md` |
 
 The hooks run `vibe-learn/hooks/session_start.py` from your clone, so keep the
 clone in place. If you move it, rerun setup. **Codex** asks you to review and trust
-the new hook the first time; learning resumes from your first message after that.
+the new hook the first time; until then, and in `codex exec`, the `AGENTS.md` line
+resumes learning instead.
+
+### Using several agents on one project
+
+Pick every agent you use when you run setup (or rerun it later to add one). They all
+read and write the same `.vibe-notes/` and `vibe-journal.md`, so you can switch
+mid-task: start a design in Claude Code, answer the next question in Codex, and the
+pending checkpoint, your preferences, and teach mode carry over. Use one agent at a
+time per project so two agents don't edit the notes at once.
 
 Setup prints suggested `.gitignore` lines (`vibe-learn/` and `.vibe-notes/`) but
 doesn't edit `.gitignore` for you.
@@ -201,6 +210,8 @@ On top of VibeWise's loop, vibe-learn adds:
   code, with a note on where the analogy breaks down.
 - **Teach mode.** Say "teach mode" to explore and ask questions while the agent
   changes no files. Say "back to building" to continue.
+- **"What are we making?"** Ask any time for a System check: what the project is
+  for, what's built, what's decided but not built yet, and what's still open.
 
 ## Make it yours
 

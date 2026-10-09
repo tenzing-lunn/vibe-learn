@@ -56,6 +56,8 @@ class SetupTests(unittest.TestCase):
         group = self.json(".codex/hooks.json")["hooks"]["SessionStart"][0]
         self.assertEqual(group["matcher"], "startup|resume|clear|compact")
         self.assertIn(str(self.clone / "hooks/session_start.py"), group["hooks"][0]["command"])
+        # Fallback for sessions where Codex doesn't run project hooks.
+        self.assertIn(".agents/skills/vibe-learn/SKILL.md", (self.project / "AGENTS.md").read_text())
 
     def test_claude_gets_project_skill_and_settings_hook(self):
         self.ok("--agents", "claude")
