@@ -240,16 +240,19 @@ def ask_agents():
     for number, key in enumerate(keys, 1):
         print("  {}. {}".format(number, AGENTS[key][0]))
     while True:
-        answer = input("Numbers separated by commas (e.g. 1,2), or 'all': ").strip().lower()
+        try:
+            answer = input("Numbers or names separated by commas (e.g. 1,2 or codex), or 'all': ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            raise SetupError("cancelled; nothing was changed.")
+        answer = answer.strip().lower()
         if answer == "all":
             return keys
-        try:
-            picked = [keys[int(part) - 1] for part in answer.split(",") if part.strip()]
-        except (ValueError, IndexError):
-            picked = []
-        if picked:
+        parts = [part.strip() for part in answer.split(",") if part.strip()]
+        picked = [keys[int(p) - 1] if p.isdecimal() and 1 <= int(p) <= len(keys) else p for p in parts]
+        if picked and all(p in AGENTS for p in picked):
             return list(dict.fromkeys(picked))
-        print("Please enter numbers from the list.")
+        print("Please enter numbers or names from the list.")
 
 
 def parse_agents(value):
@@ -263,7 +266,7 @@ def parse_agents(value):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--agents", help="Comma-separated: " + ", ".join(AGENTS))
+    parser.add_argument("--agents", help="Comma-separated: " + ", ".join(AGENTS) + " (omit to be asked)")
     parser.add_argument("--project", help="Project folder (default: the folder containing this clone)")
     args = parser.parse_args(argv)
     project = Path(args.project).resolve() if args.project else CLONE.parent

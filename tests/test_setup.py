@@ -1,5 +1,7 @@
 """Run setup.py from a clone inside temporary projects, as a user would."""
 
+import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -9,9 +11,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("vibe_learn_setup", ROOT / "setup.py")
+setup_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(setup_module)
 
 
 class SetupTests(unittest.TestCase):
@@ -278,6 +284,40 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
         self.assertIn(str(self.clone / "skills/vibe-learn/SKILL.md"), context)
+
+
+class AskAgentsTests(unittest.TestCase):
+    def ask(self, *answers):
+        with mock.patch("builtins.input", side_effect=answers), \
+                mock.patch("sys.stdout", io.StringIO()) as out:
+            return setup_module.ask_agents(), out.getvalue()
+
+    def test_zero_and_negative_numbers_are_rejected(self):
+        picked, out = self.ask("0", "-1", "5", "2")
+        self.assertEqual(picked, ["codex"])
+        self.assertEqual(out.count("Please enter numbers or names"), 3)
+
+    def test_names_and_numbers_are_accepted(self):
+        self.assertEqual(self.ask("Codex, 1, other")[0], ["codex", "claude", "other"])
+        picked, out = self.ask("codex,notepad", "gemini")
+        self.assertEqual(picked, ["gemini"])
+        self.assertIn("Please enter numbers or names", out)
+
+    def test_ctrl_c_and_ctrl_d_exit_cleanly(self):
+        for interrupt in (KeyboardInterrupt, EOFError):
+            with tempfile.TemporaryDirectory() as project, \
+                    mock.patch("builtins.input", side_effect=interrupt), \
+                    mock.patch("sys.stdin.isatty", return_value=True), \
+                    mock.patch("sys.stdout", io.StringIO()), \
+                    mock.patch("sys.stderr", io.StringIO()) as err:
+                self.assertEqual(setup_module.main(["--project", project]), 1)
+                self.assertEqual(os.listdir(project), [])
+            self.assertIn("cancelled", err.getvalue())
+
+    def test_help_says_agents_can_be_omitted(self):
+        with mock.patch("sys.stdout", io.StringIO()) as out, self.assertRaises(SystemExit):
+            setup_module.main(["--help"])
+        self.assertIn("(omit to be asked)", " ".join(out.getvalue().split()))
 
 
 if __name__ == "__main__":
