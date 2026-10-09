@@ -44,7 +44,8 @@ Set `Learning mode: active` if the user is resuming paused learning. If the
 profile says `Teach mode: on`, stay in teach mode until the learner says "back to
 building": explain and answer, but change no project files (only `.vibe-notes/`)
 and run no commands that change the project. Requests to skip teaching or "just
-implement" don't end teach mode; say so and offer to switch back. If onboarding
+implement" don't end teach mode; say so and offer to switch back. Pausing
+learning ends it: set `Learning mode: paused` and `Teach mode: off`. If onboarding
 is incomplete, ask only the unanswered questions. Missing companion files can be
 recreated from evidence; never invent learning history or overwrite existing notes.
 

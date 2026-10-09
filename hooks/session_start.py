@@ -102,7 +102,8 @@ def restore(payload):
             "files or run commands that change the project, even if asked to skip "
             "teaching or just implement; only .vibe-notes/ may be written. Explain "
             "instead, and offer to switch back when the learner says \"back to "
-            "building\".\n\n" + context
+            "building\". If they pause learning, set Learning mode: paused and "
+            "Teach mode: off.\n\n" + context
         )
     # Both agents add additionalContext to the model's context. These are reading
     # instructions for the agent; the hook itself hasn't loaded the map or progress.

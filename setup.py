@@ -42,8 +42,9 @@ RESUME_LINE = (
     "If `.vibe-notes/profile.md` exists in this project and does not say "
     "`Learning mode: paused`, read `.agents/skills/vibe-learn/SKILL.md` before "
     "responding and follow it to resume learning from the notes in `.vibe-notes/`. "
-    "If it says `Teach mode: on`, change no project files, even if asked to skip "
-    "teaching or just implement, until the learner says \"back to building\"."
+    "If it is not paused and says `Teach mode: on`, change no project files, even "
+    "if asked to skip teaching or just implement, until the learner says \"back to "
+    "building\"."
 )
 
 

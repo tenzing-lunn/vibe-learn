@@ -198,5 +198,5 @@ requirements, explained concepts, and demonstrated reasoning; proposed, confirme
 and implemented designs. Save only the scope actually agreed: no invented rationale,
 rejected alternatives, or unstated details. Preserve pending decisions across restarts
 and compaction; correct errors without repeating onboarding. Pause sets
-`Learning mode: paused`. No secrets, transcripts, separate service, or silent
+`Learning mode: paused` and `Teach mode: off`. No secrets, transcripts, separate service, or silent
 .gitignore edits. Report failed writes honestly.
